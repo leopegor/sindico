@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../core/supabase_config.dart';
+import '../../data/backend.dart';
 import 'app_drawer.dart';
 import 'navegacao.dart';
 
@@ -121,7 +123,20 @@ class PainelScaffold extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(titulo),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Flexible(
+              child: Text(
+                titulo,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const SizedBox(width: 12),
+            const IndicadorBackend(),
+          ],
+        ),
         actions: actions,
         bottom: bottom,
       ),
@@ -240,6 +255,56 @@ class ConteudoCentralizado extends StatelessWidget {
       child: ConstrainedBox(
         constraints: BoxConstraints(maxWidth: larguraMaxima),
         child: child,
+      ),
+    );
+  }
+}
+
+/// Chip na barra superior indicando de onde vêm os dados (Supabase ou local).
+class IndicadorBackend extends StatelessWidget {
+  const IndicadorBackend({super.key});
+
+  Color get _cor => Backend.usaSupabase
+      ? const Color(0xFF2E7D32)
+      : const Color(0xFFB26A00);
+
+  String get _rotulo => Backend.usaSupabase ? 'Supabase' : 'Local';
+
+  String get _detalhe {
+    if (Backend.usaSupabase) {
+      return 'Dados salvos no Supabase (nuvem) em ${SupabaseConfig.url}.';
+    }
+    return Backend.motivoModoLocal ??
+        'Supabase indisponível: os dados são salvos apenas neste dispositivo.';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: _detalhe,
+      child: ActionChip(
+        avatar: Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(color: _cor, shape: BoxShape.circle),
+        ),
+        label: Text(
+          _rotulo,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: _cor,
+          ),
+        ),
+        backgroundColor: Colors.white.withValues(alpha: 0.95),
+        side: BorderSide(color: Colors.white.withValues(alpha: 0.6)),
+        visualDensity: VisualDensity.compact,
+        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        onPressed: () {
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(SnackBar(content: Text(_detalhe)));
+        },
       ),
     );
   }

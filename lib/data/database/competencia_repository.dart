@@ -1,12 +1,50 @@
 import 'package:sqflite/sqflite.dart';
 import '../../domain/models/competencia.dart';
+import '../../domain/services/validacao_competencia.dart';
+import '../backend.dart';
+import '../repositorios.dart';
+import '../supabase/competencia_repositorio_supabase.dart';
 import 'app_database.dart';
 
-/// Repositório de acesso a dados para Competências Mensais.
-class CompetenciaRepository {
+/// Fachada de acesso às competências.
+///
+/// Delega para o Supabase quando [Backend.usaSupabase] e para o SQLite local
+/// caso contrário, mantendo as telas indiferentes ao backend ativo.
+class CompetenciaRepository implements CompetenciaRepositorio {
+  final CompetenciaRepositoryLocal _local = CompetenciaRepositoryLocal();
+  final CompetenciaRepositorioSupabase _nuvem = CompetenciaRepositorioSupabase();
+
+  @override
+  Future<List<Competencia>> getTodas() =>
+      Backend.usaSupabase ? _nuvem.getTodas() : _local.getTodas();
+
+  @override
+  Future<Competencia?> getPorId(int id) =>
+      Backend.usaSupabase ? _nuvem.getPorId(id) : _local.getPorId(id);
+
+  @override
+  Future<Competencia?> getMaisRecente() =>
+      Backend.usaSupabase ? _nuvem.getMaisRecente() : _local.getMaisRecente();
+
+  @override
+  Future<int> inserir(Competencia competencia) =>
+      Backend.usaSupabase ? _nuvem.inserir(competencia) : _local.inserir(competencia);
+
+  @override
+  Future<int> atualizar(Competencia competencia) =>
+      Backend.usaSupabase ? _nuvem.atualizar(competencia) : _local.atualizar(competencia);
+
+  @override
+  Future<int> excluir(int id) =>
+      Backend.usaSupabase ? _nuvem.excluir(id) : _local.excluir(id);
+}
+
+/// Repositório de acesso a dados para Competências Mensais (SQLite local).
+class CompetenciaRepositoryLocal implements CompetenciaRepositorio {
   Future<Database> get _db async => await AppDatabase.instance;
 
   /// Retorna todas as competências registradas ordenadas pela data decrescente
+  @override
   Future<List<Competencia>> getTodas() async {
     final db = await _db;
     final maps = await db.query(
@@ -17,6 +55,7 @@ class CompetenciaRepository {
   }
 
   /// Retorna uma competência pelo ID
+  @override
   Future<Competencia?> getPorId(int id) async {
     final db = await _db;
     final maps = await db.query(
@@ -30,6 +69,7 @@ class CompetenciaRepository {
   }
 
   /// Retorna a competência mais recente ou nulo
+  @override
   Future<Competencia?> getMaisRecente() async {
     final db = await _db;
     final maps = await db.query(
@@ -42,18 +82,20 @@ class CompetenciaRepository {
   }
 
   /// Insere uma nova competência mensal com validação prévia
+  @override
   Future<int> inserir(Competencia competencia) async {
-    _validar(competencia);
+    validarCompetencia(competencia);
     final db = await _db;
     return await db.insert('competencias', competencia.toMap());
   }
 
   /// Atualiza uma competência existente
+  @override
   Future<int> atualizar(Competencia competencia) async {
     if (competencia.id == null) {
       throw ArgumentError('Competência precisa de um ID para ser atualizada.');
     }
-    _validar(competencia);
+    validarCompetencia(competencia);
     final db = await _db;
     return await db.update(
       'competencias',
@@ -64,6 +106,7 @@ class CompetenciaRepository {
   }
 
   /// Exclui uma competência pelo ID
+  @override
   Future<int> excluir(int id) async {
     final db = await _db;
     return await db.delete(
@@ -71,36 +114,5 @@ class CompetenciaRepository {
       where: 'id = ?',
       whereArgs: [id],
     );
-  }
-
-  /// Regras de validação estritas antes de persistir no banco
-  void _validar(Competencia comp) {
-    if (comp.mesReferencia.trim().isEmpty) {
-      throw ArgumentError('O mês de referência é obrigatório.');
-    }
-    if (comp.nomeSindico.trim().isEmpty) {
-      throw ArgumentError('O nome do(a) síndico(a) é obrigatório.');
-    }
-    if (comp.aptoSindico.trim().isEmpty) {
-      throw ArgumentError('O apartamento do síndico / local de pagamento é obrigatório.');
-    }
-    if (comp.valorContaAgua < 0) {
-      throw ArgumentError('O valor da conta de água não pode ser negativo.');
-    }
-    if (comp.valorEsgotoTotal < 0) {
-      throw ArgumentError('O valor total do esgoto não pode ser negativo.');
-    }
-    if (comp.taxaMinimaAgua < 0) {
-      throw ArgumentError('A taxa mínima de água não pode ser negativa.');
-    }
-    if (comp.valorContaEnergia < 0) {
-      throw ArgumentError('O valor da conta de energia não pode ser negativo.');
-    }
-    if (comp.servicosLimpeza < 0) {
-      throw ArgumentError('O valor dos serviços de limpeza não pode ser negativo.');
-    }
-    if (comp.fundoManutencaoMensal < 0) {
-      throw ArgumentError('O fundo de manutenção não pode ser negativo.');
-    }
   }
 }

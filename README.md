@@ -61,7 +61,8 @@ Substituir o processo manual em planilha por uma ferramenta móvel acessível, c
 
 - **Framework:** Flutter 3.47.5
 - **Linguagem:** Dart 3.13.4
-- **Persistência Local:** SQLite via `sqflite` (ACID transacional)
+- **Persistência na Nuvem:** Supabase (PostgreSQL) via `supabase_flutter` — backend principal
+- **Persistência Local (fallback):** SQLite via `sqflite` (usada quando o Supabase está indisponível)
 - **Localização:** `flutter_localizations` e `intl` (pt_BR)
 - **Geração e Impressão de Documentos:** `pdf` e `printing`
 - **Compartilhamento de Arquivos:** `share_plus`
@@ -127,13 +128,40 @@ Para executar a análise estática completa de código:
 flutter analyze
 ```
 
+Teste de integração real contra o Supabase (usa dados de teste e os remove ao
+final; desativado por padrão):
+```bash
+flutter test test/supabase_live_test.dart --dart-define=SUPABASE_LIVE=true
+```
+
 ---
 
-## 8. Persistência de Dados e Armazenamento Local
+## 8. Persistência de Dados (Supabase e SQLite local)
 
-- Os dados são armazenados localmente no banco de dados SQLite `sindico_evaristo_lucchese.db` dentro do diretório protegido do aplicativo no Android.
-- As gravações de competência e alterações de cadastro são executadas dentro de **transações atômicas** (`db.transaction`), impedindo inconsistências no caso de falhas ou fechamento do app.
-- Fechar o aplicativo ou reiniciar o celular não afeta os registros.
+O aplicativo usa o **Supabase (PostgreSQL)** como fonte de dados principal. Se a
+conexão falhar na inicialização, ele continua funcionando com o banco **SQLite
+local** (`sindico_evaristo_lucchese.db`), sem interromper o uso.
+
+- **Indicador na barra superior:** um chip mostra `Supabase` (nuvem) ou `Local`
+  (offline). Toque nele para ver o motivo do modo local.
+- **Esquema do banco remoto:** definido em `supabase/migrations/`
+  (`schema_inicial`, `politicas_rls`, `seed_dados_iniciais`), aplicado via
+  `npx supabase db push --db-url "<connection-string>"`.
+- **Acesso:** as políticas de RLS liberam leitura/escrita para os papéis `anon`
+  e `authenticated` (o app não possui login de usuário final — qualquer portador
+  da publishable key acessa os dados do condomínio).
+- **Repositórios:** as telas usam as fachadas `CompetenciaRepository`,
+  `UnidadeRepository`, `PagamentoRepository` e `DividaRepository`, que escolhem
+  automaticamente o backend (Supabase ou SQLite) conforme `Backend.usaSupabase`.
+- **Configuração por build (opcional):**
+  ```bash
+  flutter run --dart-define=SUPABASE_URL=... \
+              --dart-define=SUPABASE_PUBLISHABLE_KEY=... \
+              --dart-define=SUPABASE_ATIVO=true
+  ```
+  Use `--dart-define=SUPABASE_ATIVO=false` para forçar o modo local.
+- **Backup:** exporta/restaura JSON (checksum SHA-256) a partir dos dados do
+  backend ativo — funciona igual em nuvem e offline.
 
 ---
 
@@ -148,9 +176,10 @@ flutter analyze
 
 ## 10. Limitações Conhecidas e Procedimentos de Preservação de Dados
 
-- **Dados Restritos ao Dispositivo:** Os dados não são sincronizados automaticamente em servidores remotos ou na nuvem (o aplicativo funciona 100% offline).
-- **Risco de Perda por Desinstalação:** Desinstalar o aplicativo do Android apagará os dados locais salvos.
-- **Procedimento Obrigatório de Backup:** O síndico deve utilizar a tela de **Backup e Segurança** ao final de cada mês, exportando o arquivo JSON para o seu Google Drive, e-mail pessoal ou computador.
+- **Dados compartilhados na nuvem:** com o Supabase ativo, os dados ficam no PostgreSQL remoto e são acessíveis de qualquer dispositivo que use a mesma publishable key (não há login por usuário).
+- **Modo local (fallback):** sem conexão, o app grava no SQLite do dispositivo; esses lançamentos não são enviados automaticamente para a nuvem depois.
+- **Risco de Perda por Desinstalação:** no modo local, desinstalar o aplicativo apaga os dados salvos no aparelho (na nuvem os dados permanecem).
+- **Procedimento Obrigatório de Backup:** mesmo com o Supabase ativo, recomenda-se usar a tela de **Backup e Segurança** ao final de cada mês, exportando o arquivo JSON para o Google Drive, e-mail pessoal ou computador.
 
 ---
 
