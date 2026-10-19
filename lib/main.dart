@@ -1,12 +1,17 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'data/database/app_database.dart';
 import 'ui/widgets/app_shell.dart';
 import 'ui/widgets/navegacao.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Supabase.initialize(
+    url: 'https://gpgasyauidcidxyxknio.supabase.co',
+    publishableKey: 'sb_publishable_1ofFhfTu4R8lPZH_HQazqQ_ADof-MDN',
+  );
   AppDatabase.initializeFfiIfNeeded();
   runApp(const SindicoApp());
 }
