@@ -266,6 +266,18 @@ class FieldHelpCatalog {
     efeito: 'Adicionada ao total devido a partir do 30º dia de atraso em todas as faixas subsequentes.',
   );
 
+  static const fatorAtraso = FieldHelpInfo(
+    nome: 'Fator de Atraso até 30 Dias',
+    finalidade: 'Definir o acréscimo aplicado à base de cobrança para gerar a faixa de até 30 dias de atraso.',
+    instrucao: 'Informe o divisor aplicado ao valor do vencimento. O padrão 0,95 equivale a um acréscimo de 5,26%.',
+    origem: 'Fórmula histórica da planilha (valor no vencimento ÷ 0,95).',
+    exemplo: '0,95',
+    formato: 'Decimal entre 0,01 e 1,00',
+    obrigatorio: true,
+    validacao: 'Deve ser maior que 0 e menor ou igual a 1,00.',
+    efeito: 'Calcula a faixa até 30 dias como valor no vencimento ÷ fator.',
+  );
+
   static const divisorRateioSindico = FieldHelpInfo(
     nome: 'Divisor do Rateio do Síndico',
     finalidade: 'Definir o número de unidades participantes no rateio da isenção de despesas operacionais do síndico.',

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../../core/codigo_unidade.dart';
 import '../../core/currency_utils.dart';
 import '../../data/database/pagamento_repository.dart';
 import '../../domain/models/fechamento_rateio.dart';
@@ -196,7 +197,7 @@ class _RateioDemonstrativoScreenState extends State<RateioDemonstrativoScreen> {
                           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                         ),
                         Text(
-                          'Total de Moradores: ${widget.fechamento.totalPessoas} pessoas • Síndico: ${comp.nomeSindico} (Apto ${comp.aptoSindico})',
+                          'Total de Moradores: ${widget.fechamento.totalPessoas} pessoas • Síndico: ${comp.nomeSindico} (Apto ${widget.fechamento.codigoSindico})',
                           style: TextStyle(color: Colors.grey.shade700, fontSize: 12),
                         ),
                         Text(
@@ -248,8 +249,10 @@ class _RateioDemonstrativoScreenState extends State<RateioDemonstrativoScreen> {
                 ],
                 rows: [
                   ...widget.fechamento.itens.map((item) {
-                    final isSindico = item.unidade.isSindico ||
-                        item.unidade.codigo.trim() == comp.aptoSindico.trim();
+                    final isSindico = mesmoCodigoUnidade(
+                      item.unidade.codigo,
+                      widget.fechamento.codigoSindico,
+                    );
                     final pago = _estaPago(item.unidade.codigo);
                     final valorHoje = _valorHoje(item);
                     final emAtraso = valorHoje > item.faixaNoVencimento + 0.001;
@@ -408,7 +411,7 @@ class _RateioDemonstrativoScreenState extends State<RateioDemonstrativoScreen> {
                   _buildNotaItem('Limpeza:', 'Custo total de serviços e materiais dividido pelas 11 unidades.'),
                   _buildNotaItem('Outras Despesas:', 'Limpeza de caixas d\'água dividida por 10 unidades (síndico isento).'),
                   _buildNotaItem('Fundo Emergencial:', 'R\$ 100,00 por apartamento. A Loja não contribui no fundo preventivo regular.'),
-                  _buildNotaItem('Síndico (Apto ${comp.aptoSindico}):', 'Despesas operacionais (água, luz e limpeza) cobertas pelo rateio das demais unidades. Paga apenas o fundo de reserva.'),
+                  _buildNotaItem('Síndico (Apto ${widget.fechamento.codigoSindico}):', 'Despesas operacionais (água, luz e limpeza) cobertas pelo rateio das demais unidades. Paga apenas o fundo de reserva.'),
                   _buildNotaItem('Atrasos:', 'Até 30 dias aplica fator 0,95 (+5,26%). Acima de 30 dias acresce juros de 1,5% a.m. e multa legal de 2,0%.'),
                 ],
               ),

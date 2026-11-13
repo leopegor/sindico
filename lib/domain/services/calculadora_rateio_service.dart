@@ -2,6 +2,7 @@ import '../models/competencia.dart';
 import '../models/unidade.dart';
 import '../models/rateio_unidade.dart';
 import '../models/fechamento_rateio.dart';
+import '../../core/codigo_unidade.dart';
 import '../../core/currency_utils.dart';
 
 /// Serviço responsável pelo cálculo e rateio das despesas condominiais,
@@ -39,15 +40,14 @@ class CalculadoraRateioService {
     final outrosPorUnidade = competencia.limpezaCaixasAgua / 10.0;
 
     // 7. Identificação do Síndico para apuração do consumo da unidade do síndico
-    // Prioriza o aptoSindico informado na competência atual, com fallback para isSindico
-    String normalizarCodigo(String cod) =>
-        cod.replaceAll(RegExp(r'[^0-9a-zA-Z]'), '').toUpperCase();
-    final aptoNormalizado = normalizarCodigo(competencia.aptoSindico);
+    // O aptoSindico da competência é o snapshot do síndico no momento do preenchimento.
+    // Se estiver vazio ou não corresponder a nenhuma unidade, usa o cadastro atual.
+    final aptoNormalizado = normalizarCodigoUnidade(competencia.aptoSindico);
 
     Unidade? sindicoUnidade;
     if (aptoNormalizado.isNotEmpty) {
       for (final u in unidades) {
-        if (normalizarCodigo(u.codigo) == aptoNormalizado) {
+        if (normalizarCodigoUnidade(u.codigo) == aptoNormalizado) {
           sindicoUnidade = u;
           break;
         }
@@ -62,7 +62,8 @@ class CalculadoraRateioService {
       }
     }
     final idSindico = sindicoUnidade?.id;
-    final codigoSindicoNormalizado = normalizarCodigo(sindicoUnidade?.codigo ?? competencia.aptoSindico);
+    final codigoSindico = sindicoUnidade?.codigo ?? competencia.aptoSindico;
+    final codigoSindicoNormalizado = normalizarCodigoUnidade(codigoSindico);
 
     // 8. Cálculo prévio do consumo operacional da unidade do síndico
     // Na planilha, D39 = N67 (consumo de água + luz + limpeza do síndico na linha atrasada ÷ 0,95)
@@ -87,8 +88,8 @@ class CalculadoraRateioService {
     final itens = <RateioUnidade>[];
 
     for (final u in unidades) {
-      final isUnidadeSindico = (idSindico != null && u.id == idSindico) ||
-          (normalizarCodigo(u.codigo) == codigoSindicoNormalizado);
+    final isUnidadeSindico = (idSindico != null && u.id == idSindico) ||
+        (normalizarCodigoUnidade(u.codigo) == codigoSindicoNormalizado);
 
       // Água no vencimento
       final double aguaVenc;
@@ -272,6 +273,7 @@ class CalculadoraRateioService {
     return FechamentoRateio(
       competencia: competencia,
       itens: itens,
+      codigoSindico: codigoSindico,
       totalPessoas: totalPessoas,
       totalAgua: somaAgua,
       totalLuz: somaLuz,

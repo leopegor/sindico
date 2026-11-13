@@ -106,5 +106,38 @@ void main() {
       expect(apto401.faixa120a150Dias, closeTo(439.12, 0.05));
       expect(apto401.faixa150a180Dias, closeTo(445.71, 0.05));
     });
+
+    test('Deve preservar o síndico gravado na competência antiga', () {
+      final competenciaComOutroSindico =
+          competencia.copyWith(aptoSindico: '202');
+      final resultado = CalculadoraRateioService.calcular(
+        competencia: competenciaComOutroSindico,
+        unidades: unidades,
+      );
+
+      expect(resultado.codigoSindico, equals('202'));
+
+      final sindicoDaCompetencia =
+          resultado.itens.firstWhere((i) => i.unidade.codigo == '202');
+      final sindicoAtualDoCadastro =
+          resultado.itens.firstWhere((i) => i.unidade.codigo == '301');
+      expect(sindicoDaCompetencia.rateioSindicoVencimento, equals(0.0));
+      expect(sindicoAtualDoCadastro.rateioSindicoVencimento, greaterThan(0.0));
+    });
+
+    test('Deve usar o síndico do cadastro quando o apto da competência não existir', () {
+      final competenciaComAptoInvalido =
+          competencia.copyWith(aptoSindico: '999');
+      final resultado = CalculadoraRateioService.calcular(
+        competencia: competenciaComAptoInvalido,
+        unidades: unidades,
+      );
+
+      expect(resultado.codigoSindico, equals('301'));
+
+      final sindicoCadastro =
+          resultado.itens.firstWhere((i) => i.unidade.codigo == '301');
+      expect(sindicoCadastro.rateioSindicoVencimento, equals(0.0));
+    });
   });
 }

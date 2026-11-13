@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/codigo_unidade.dart';
 import '../../core/currency_utils.dart';
 import '../../domain/models/fechamento_rateio.dart';
 import 'competencia_form_screen.dart';
@@ -56,7 +57,7 @@ class RecibosListScreen extends StatelessWidget {
         itemBuilder: (ctx, index) {
           final item = fechamento.itens[index];
           final u = item.unidade;
-          final isSindico = u.isSindico || u.codigo.trim() == comp.aptoSindico.trim();
+          final isSindico = mesmoCodigoUnidade(u.codigo, fechamento.codigoSindico);
 
           return Card(
             margin: const EdgeInsets.only(bottom: 12),

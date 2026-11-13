@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../../core/codigo_unidade.dart';
 import '../../core/currency_utils.dart';
 import '../../domain/models/fechamento_rateio.dart';
 import '../../domain/models/rateio_unidade.dart';
@@ -23,7 +24,7 @@ class ReciboDetalheScreen extends StatelessWidget {
     final comp = fechamento.competencia;
     final u = rateioItem.unidade;
     final dateFormat = DateFormat('dd/MM/yyyy');
-    final isSindico = u.isSindico || u.codigo.trim() == comp.aptoSindico.trim();
+    final isSindico = mesmoCodigoUnidade(u.codigo, fechamento.codigoSindico);
 
     return Scaffold(
       appBar: AppBar(
@@ -311,7 +312,7 @@ class ReciboDetalheScreen extends StatelessWidget {
                   ),
                   const Divider(),
                   Text(
-                    '• Efetuar o pagamento com o(a) síndico(a) ${comp.nomeSindico} no Apto ${comp.aptoSindico}.',
+                    '• Efetuar o pagamento com o(a) síndico(a) ${comp.nomeSindico} no Apto ${fechamento.codigoSindico}.',
                     style: const TextStyle(fontSize: 13),
                   ),
                   const SizedBox(height: 6),

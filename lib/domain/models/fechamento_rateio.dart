@@ -6,6 +6,7 @@ import 'rateio_unidade.dart';
 class FechamentoRateio {
   final Competencia competencia;
   final List<RateioUnidade> itens;
+  final String codigoSindico;
 
   // Linhas de conferência e totais consolidados (Linha 67 da planilha)
   final int totalPessoas; // D67
@@ -24,6 +25,7 @@ class FechamentoRateio {
   const FechamentoRateio({
     required this.competencia,
     required this.itens,
+    required this.codigoSindico,
     required this.totalPessoas,
     required this.totalAgua,
     required this.totalLuz,

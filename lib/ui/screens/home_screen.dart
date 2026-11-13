@@ -83,6 +83,17 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  Future<void> _adicionarAno() async {
+    final ano = await showDialog<int>(
+      context: context,
+      builder: (_) => const _AdicionarAnoDialog(),
+    );
+
+    if (ano != null && mounted) {
+      setState(() => _anosExtras.add(ano));
+    }
+  }
+
   Future<void> _abrirDemonstrativo(Competencia comp) async {
     final unidades = await _unidadeRepo.getTodas();
     final fechamento = CalculadoraRateioService.calcular(
@@ -293,7 +304,6 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildConteudo() {
     final agrupado = _agruparPorAno();
     final anos = _anosVisiveis(agrupado);
-    final menoAno = anos.last;
     final compacto = _tela.width < 600;
 
     return ListView(
@@ -307,9 +317,9 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
         Center(
           child: OutlinedButton.icon(
-            icon: const Icon(Icons.history),
-            label: Text('Adicionar ano ${menoAno - 1}'),
-            onPressed: () => setState(() => _anosExtras.add(menoAno - 1)),
+            icon: const Icon(Icons.calendar_month_outlined),
+            label: const Text('Adicionar ano'),
+            onPressed: _adicionarAno,
           ),
         ),
       ],
@@ -326,7 +336,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       child: Row(
         children: [
-          _buildLegendaItem(const Color(0xFF1565C0), 'Mês lançado — clique para editar ou use ⋮ para recibos e demonstrativos'),
+          _buildLegendaItem(const Color(0xFF1565C0), 'Mês lançado — clique para abrir o demonstrativo ou use ⋮ para editar, recibos e PDF'),
         ],
       ),
     );
@@ -520,7 +530,7 @@ class _HomeScreenState extends State<HomeScreen> {
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
-        onTap: () => _abrirEdicao(comp),
+        onTap: () => _abrirDemonstrativo(comp),
         child: Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
@@ -616,6 +626,69 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _AdicionarAnoDialog extends StatefulWidget {
+  const _AdicionarAnoDialog();
+
+  @override
+  State<_AdicionarAnoDialog> createState() => _AdicionarAnoDialogState();
+}
+
+class _AdicionarAnoDialogState extends State<_AdicionarAnoDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final _controller = TextEditingController(
+    text: DateTime.now().year.toString(),
+  );
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _confirmar() {
+    if (_formKey.currentState!.validate()) {
+      Navigator.of(context).pop(int.parse(_controller.text.trim()));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Adicionar ano'),
+      content: Form(
+        key: _formKey,
+        child: TextFormField(
+          controller: _controller,
+          autofocus: true,
+          keyboardType: TextInputType.number,
+          decoration: const InputDecoration(
+            labelText: 'Ano',
+            hintText: 'Ex.: 2025',
+          ),
+          onFieldSubmitted: (_) => _confirmar(),
+          validator: (valor) {
+            final ano = int.tryParse(valor?.trim() ?? '');
+            if (ano == null || ano < 2000 || ano > 2100) {
+              return 'Informe um ano entre 2000 e 2100.';
+            }
+            return null;
+          },
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton(
+          onPressed: _confirmar,
+          child: const Text('Adicionar'),
+        ),
+      ],
     );
   }
 }

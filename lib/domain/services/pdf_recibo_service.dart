@@ -239,7 +239,7 @@ class PdfReciboService {
           ),
           pw.SizedBox(height: 2),
           pw.Text(
-            '1. Síndico(a): ${comp.nomeSindico} | Mandato: ${comp.periodoMandato} | Efetuar pagamento no Apto: ${comp.aptoSindico}.',
+            '1. Síndico(a): ${comp.nomeSindico} | Mandato: ${comp.periodoMandato} | Efetuar pagamento no Apto: ${fechamento.codigoSindico}.',
             style: const pw.TextStyle(fontSize: 8),
           ),
           pw.Text(

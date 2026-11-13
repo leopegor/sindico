@@ -5,11 +5,13 @@ import '../../core/field_help_definitions.dart';
 import '../../data/database/competencia_repository.dart';
 import '../../data/database/unidade_repository.dart';
 import '../../domain/models/competencia.dart';
+import '../../domain/models/parametros_financeiros.dart';
 import '../../domain/models/unidade.dart';
 import '../../domain/services/calculadora_rateio_service.dart';
 import '../widgets/conferencia_card.dart';
 import '../widgets/contextual_help_field.dart';
 import '../widgets/app_shell.dart';
+import 'parametros_financeiros_screen.dart';
 
 /// Tela para criação e edição de uma competência mensal de despesas.
 class CompetenciaFormScreen extends StatefulWidget {
@@ -76,6 +78,7 @@ class _CompetenciaFormScreenState extends State<CompetenciaFormScreen> {
 
   DateTime _dataVencimentoSelecionada = DateTime.now().add(const Duration(days: 15));
   int _divisorRateioSindico = 11;
+  double _fatorAtraso = 0.95;
   List<Unidade> _unidades = [];
   bool _salvando = false;
 
@@ -90,12 +93,14 @@ class _CompetenciaFormScreenState extends State<CompetenciaFormScreen> {
 
   void _inicializarValores() {
     final comp = widget.competenciaExistente ?? Competencia.exemploSetembro2026;
+    final mesInicial = widget.mesInicial;
+    final anoInicial = widget.anoInicial;
 
     if (widget.competenciaExistente != null) {
       _dataVencimentoSelecionada = comp.dataVencimento;
-    } else if (widget.mesInicial != null && widget.anoInicial != null) {
+    } else if (mesInicial != null && anoInicial != null) {
       // Novo lançamento a partir de um mês específico (ex.: tile vazio do ano)
-      _dataVencimentoSelecionada = DateTime(widget.anoInicial!, widget.mesInicial!, 15);
+      _dataVencimentoSelecionada = DateTime(anoInicial, mesInicial + 1, 15);
     } else {
       // Se for novo, sugere o dia 15 do próximo mês
       final proximoMes = DateTime.now();
@@ -105,10 +110,14 @@ class _CompetenciaFormScreenState extends State<CompetenciaFormScreen> {
     final dateFormat = DateFormat('dd/MM/yyyy');
 
     _mesRefController = TextEditingController(
-      text: widget.competenciaExistente?.mesReferencia ?? _obterNomeMesPadrao(_dataVencimentoSelecionada),
+      text: widget.competenciaExistente?.mesReferencia ??
+          (mesInicial != null
+              ? _nomeMesPorIndice(mesInicial)
+              : _obterNomeMesPadrao(_dataVencimentoSelecionada)),
     );
     _anoRefController = TextEditingController(
-      text: widget.competenciaExistente?.anoReferencia.toString() ?? _dataVencimentoSelecionada.year.toString(),
+      text: widget.competenciaExistente?.anoReferencia.toString() ??
+          (anoInicial?.toString() ?? _dataVencimentoSelecionada.year.toString()),
     );
     _dataVencController = TextEditingController(
       text: dateFormat.format(_dataVencimentoSelecionada),
@@ -181,46 +190,36 @@ class _CompetenciaFormScreenState extends State<CompetenciaFormScreen> {
     );
 
     _divisorRateioSindico = comp.divisorRateioSindico == 10 ? 10 : 11;
+    _fatorAtraso = comp.fatorAtraso > 0 ? comp.fatorAtraso : 0.95;
   }
 
+  static const List<String> _nomesMeses = [
+    'JANEIRO',
+    'FEVEREIRO',
+    'MARÇO',
+    'ABRIL',
+    'MAIO',
+    'JUNHO',
+    'JULHO',
+    'AGOSTO',
+    'SETEMBRO',
+    'OUTUBRO',
+    'NOVEMBRO',
+    'DEZEMBRO'
+  ];
+
+  String _nomeMesPorIndice(int mes) => _nomesMeses[(mes - 1).clamp(0, 11)];
+
   String _obterNomeMesPadrao(DateTime date) {
-    const meses = [
-      'JANEIRO',
-      'FEVEREIRO',
-      'MARÇO',
-      'ABRIL',
-      'MAIO',
-      'JUNHO',
-      'JULHO',
-      'AGOSTO',
-      'SETEMBRO',
-      'OUTUBRO',
-      'NOVEMBRO',
-      'DEZEMBRO'
-    ];
     // Se vencimento é no dia 10 ou 15, o mês de referência é o anterior
     final mesRefIndex = (date.month - 2 + 12) % 12;
-    return meses[mesRefIndex];
+    return _nomesMeses[mesRefIndex];
   }
 
   String _obterProximoMesNome(String mesAtual) {
-    const meses = [
-      'JANEIRO',
-      'FEVEREIRO',
-      'MARÇO',
-      'ABRIL',
-      'MAIO',
-      'JUNHO',
-      'JULHO',
-      'AGOSTO',
-      'SETEMBRO',
-      'OUTUBRO',
-      'NOVEMBRO',
-      'DEZEMBRO'
-    ];
-    final idx = meses.indexOf(mesAtual.toUpperCase().trim());
+    final idx = _nomesMeses.indexOf(mesAtual.toUpperCase().trim());
     if (idx >= 0) {
-      return meses[(idx + 1) % 12];
+      return _nomesMeses[(idx + 1) % 12];
     }
     return 'JANEIRO';
   }
@@ -240,6 +239,7 @@ class _CompetenciaFormScreenState extends State<CompetenciaFormScreen> {
       try {
         final maisRecente = await _competenciaRepo.getMaisRecente();
         if (maisRecente != null && mounted) {
+          final definirData = widget.mesInicial == null || widget.anoInicial == null;
           final proximoMesNome = _obterProximoMesNome(maisRecente.mesReferencia);
           final novoAno = maisRecente.mesReferencia.toUpperCase() == 'DEZEMBRO'
               ? maisRecente.anoReferencia + 1
@@ -251,14 +251,18 @@ class _CompetenciaFormScreenState extends State<CompetenciaFormScreen> {
           );
 
           setState(() {
-            _mesRefController.text = proximoMesNome;
-            _anoRefController.text = novoAno.toString();
-            _dataVencimentoSelecionada = novoVenc;
-            _dataVencController.text = DateFormat('dd/MM/yyyy').format(novoVenc);
+            if (definirData) {
+              _mesRefController.text = proximoMesNome;
+              _anoRefController.text = novoAno.toString();
+              _dataVencimentoSelecionada = novoVenc;
+              _dataVencController.text = DateFormat('dd/MM/yyyy').format(novoVenc);
+            }
             _nomeSindicoController.text = maisRecente.nomeSindico;
             _aptoSindicoController.text = maisRecente.aptoSindico;
             _periodoMandatoController.text = maisRecente.periodoMandato;
             _divisorRateioSindico = maisRecente.divisorRateioSindico == 10 ? 10 : 11;
+            _fatorAtraso =
+                maisRecente.fatorAtraso > 0 ? maisRecente.fatorAtraso : 0.95;
             _jurosMoraController.text =
                 (maisRecente.jurosMoraMensal * 100).toStringAsFixed(2).replaceAll('.', ',');
             _multaMoraController.text =
@@ -267,6 +271,28 @@ class _CompetenciaFormScreenState extends State<CompetenciaFormScreen> {
         }
       } catch (e) {
         debugPrint('Erro ao buscar competência mais recente: $e');
+      }
+    }
+
+    // Em uma nova competência, captura o síndico atual do cadastro de unidades.
+    // Competências antigas mantêm o aptoSindico gravado no momento do preenchimento.
+    if (widget.competenciaExistente == null && _unidades.isNotEmpty) {
+      Unidade? sindicoCadastro;
+      for (final u in _unidades) {
+        if (u.isSindico) {
+          sindicoCadastro = u;
+          break;
+        }
+      }
+      final sindico = sindicoCadastro;
+      if (sindico != null && mounted) {
+        setState(() {
+          _aptoSindicoController.text = sindico.codigo;
+          final nome = sindico.nomeMorador.trim();
+          if (nome.isNotEmpty) {
+            _nomeSindicoController.text = nome;
+          }
+        });
       }
     }
   }
@@ -354,6 +380,34 @@ class _CompetenciaFormScreenState extends State<CompetenciaFormScreen> {
     }
   }
 
+  Future<void> _abrirParametrosFinanceiros() async {
+    final parametros = await Navigator.of(context).push<ParametrosFinanceiros>(
+      MaterialPageRoute(
+        builder: (_) => ParametrosFinanceirosScreen(
+          iniciais: ParametrosFinanceiros(
+            jurosMoraMensal:
+                CurrencyUtils.parse(_jurosMoraController.text) / 100.0,
+            multaMora: CurrencyUtils.parse(_multaMoraController.text) / 100.0,
+            fatorAtraso: _fatorAtraso,
+            divisorRateioSindico: _divisorNormalizado,
+          ),
+          competenciaRotulo:
+              '${_mesRefController.text.trim()}/${_anoRefController.text.trim()}',
+        ),
+      ),
+    );
+
+    if (parametros == null || !mounted) return;
+    setState(() {
+      _jurosMoraController.text =
+          (parametros.jurosMoraMensal * 100).toStringAsFixed(2).replaceAll('.', ',');
+      _multaMoraController.text =
+          (parametros.multaMora * 100).toStringAsFixed(2).replaceAll('.', ',');
+      _fatorAtraso = parametros.fatorAtraso;
+      _divisorRateioSindico = parametros.divisorRateioSindico;
+    });
+  }
+
   Competencia _construirCompetenciaFormulario() {
     return Competencia(
       id: widget.competenciaExistente?.id,
@@ -387,7 +441,7 @@ class _CompetenciaFormScreenState extends State<CompetenciaFormScreen> {
       jurosMoraMensal: (CurrencyUtils.parse(_jurosMoraController.text)) / 100.0,
       multaMora: (CurrencyUtils.parse(_multaMoraController.text)) / 100.0,
       divisorRateioSindico: _divisorNormalizado,
-      fatorAtraso: 0.95,
+      fatorAtraso: _fatorAtraso,
       criadoEm: widget.competenciaExistente?.criadoEm ?? DateTime.now(),
     );
   }
@@ -871,79 +925,41 @@ class _CompetenciaFormScreenState extends State<CompetenciaFormScreen> {
 
                   // 7. Parâmetros Legais e Financeiros
                   _buildSecaoCard(
-                    titulo: '7. Parâmetros de Juros, Multa e Rateio do Síndico',
-                    subtitulo: 'Configurações de assembleia e divisor de rateio',
+                    titulo: '7. Juros, Multa e Percentuais',
+                    subtitulo: 'Configurações financeiras exclusivas deste mês',
                     icone: Icons.percent,
                     children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: ContextualHelpField(
-                              helpInfo: FieldHelpCatalog.jurosMoraMensal,
-                              controller: _jurosMoraController,
-                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                              suffixText: '% a.m.',
-                              onChanged: (_) => setState(() {}),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: ContextualHelpField(
-                              helpInfo: FieldHelpCatalog.multaMora,
-                              controller: _multaMoraController,
-                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                              suffixText: '%',
-                              onChanged: (_) => setState(() {}),
-                            ),
-                          ),
-                        ],
+                      _buildResumoParametro(
+                        'Juros de mora',
+                        '${CurrencyUtils.formatPercent(CurrencyUtils.parse(_jurosMoraController.text) / 100.0)} ao mês',
                       ),
-                      const SizedBox(height: 12),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Expanded(
-                            child: DropdownButtonFormField<int>(
-                              key: ValueKey(_divisorNormalizado),
-                              initialValue: _divisorNormalizado,
-                              decoration: InputDecoration(
-                                labelText: 'Divisor do Rateio do Síndico',
-                                helperText: _divisorRateioSindico == 11
-                                    ? 'Divide por 11 unidades (fórmula da planilha original)'
-                                    : 'Divide por 10 pagantes (fechamento exato de 100% do consumo)',
-                                helperMaxLines: 2,
-                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                                filled: true,
-                                fillColor: Colors.white,
-                              ),
-                              items: const [
-                                DropdownMenuItem(
-                                  value: 11,
-                                  child: Text('11 unidades (Planilha Original)'),
-                                ),
-                                DropdownMenuItem(
-                                  value: 10,
-                                  child: Text('10 unidades (Fechamento Exato 100%)'),
-                                ),
-                              ],
-                              onChanged: (val) {
-                                if (val != null) {
-                                  setState(() => _divisorRateioSindico = val);
-                                }
-                              },
-                            ),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.help_outline, size: 20),
-                            color: Theme.of(context).colorScheme.primary,
-                            tooltip: 'Ver ajuda de "Divisor do Rateio do Síndico"',
-                            constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
-                            onPressed: () => ContextualHelpField.mostrarAjuda(
-                              context,
-                              FieldHelpCatalog.divisorRateioSindico,
-                            ),
-                          ),
-                        ],
+                      const SizedBox(height: 8),
+                      _buildResumoParametro(
+                        'Multa de mora',
+                        CurrencyUtils.formatPercent(
+                          CurrencyUtils.parse(_multaMoraController.text) / 100.0,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      _buildResumoParametro(
+                        'Acréscimo até 30 dias',
+                        CurrencyUtils.formatPercent(
+                          _fatorAtraso > 0 ? (1 / _fatorAtraso) - 1 : 0,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      _buildResumoParametro(
+                        'Divisor do rateio do síndico',
+                        '$_divisorNormalizado unidades',
+                      ),
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          icon: const Icon(Icons.tune),
+                          label: const Text('Configurar juros e percentuais'),
+                          onPressed: _abrirParametrosFinanceiros,
+                        ),
                       ),
                     ],
                   ),
@@ -1037,6 +1053,34 @@ class _CompetenciaFormScreenState extends State<CompetenciaFormScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: children,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildResumoParametro(String rotulo, String valor) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              rotulo,
+              style: const TextStyle(fontSize: 13),
+            ),
+          ),
+          Text(
+            valor,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
             ),
           ),
         ],

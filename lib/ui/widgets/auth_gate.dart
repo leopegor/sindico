@@ -44,19 +44,15 @@ class _AuthGateState extends State<AuthGate> {
 
   @override
   Widget build(BuildContext context) {
-    if (_autenticado == null) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
-    }
-
-    if (!_autenticado!) {
-      return LoginScreen(onEntrar: _entrar);
-    }
-
     return AuthScope(
       sair: _sair,
-      child: const AppLayout(secaoInicial: DestinoApp.competencias),
+      child: _autenticado == null
+          ? const Scaffold(
+              body: Center(child: CircularProgressIndicator()),
+            )
+          : _autenticado!
+              ? const AppLayout(secaoInicial: DestinoApp.competencias)
+              : LoginScreen(onEntrar: _entrar),
     );
   }
 }

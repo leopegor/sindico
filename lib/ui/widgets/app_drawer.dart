@@ -52,7 +52,9 @@ class AppDrawer extends StatelessWidget {
               onTap: () {
                 final auth = AuthScope.maybeOf(context);
                 Navigator.of(context).pop();
-                auth?.sair();
+                if (auth != null) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) => auth.sair());
+                }
               },
             ),
           Padding(
