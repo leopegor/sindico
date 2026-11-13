@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+
 import '../../core/credenciais.dart';
+import '../widgets/botao_tema.dart';
 
 class LoginScreen extends StatefulWidget {
   final VoidCallback onEntrar;
@@ -42,14 +44,25 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final escuro = theme.brightness == Brightness.dark;
+
+    final gradienteCores = escuro
+        ? const [Color(0xFF0D1B2A), Color(0xFF1B263B)]
+        : const [Color(0xFF1565C0), Color(0xFF0D47A1)];
 
     return Scaffold(
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        actions: const [BotaoTema()],
+      ),
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [Color(0xFF1565C0), Color(0xFF0D47A1)],
+            colors: gradienteCores,
           ),
         ),
         child: SafeArea(
@@ -60,7 +73,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 constraints: const BoxConstraints(maxWidth: 420),
                 child: Card(
                   elevation: 8,
-                  color: Colors.white,
+                  color: theme.cardTheme.color ?? theme.colorScheme.surface,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(20),
                   ),
@@ -74,8 +87,8 @@ class _LoginScreenState extends State<LoginScreen> {
                         children: [
                           CircleAvatar(
                             radius: 34,
-                            backgroundColor:
-                                theme.colorScheme.primary.withValues(alpha: 0.1),
+                            backgroundColor: theme.colorScheme.primary
+                                .withValues(alpha: 0.1),
                             child: Icon(
                               Icons.apartment,
                               size: 38,
@@ -96,7 +109,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             'Condomínio Evaristo Lucchese',
                             textAlign: TextAlign.center,
                             style: theme.textTheme.bodyMedium?.copyWith(
-                              color: Colors.grey.shade600,
+                              color: theme.colorScheme.onSurfaceVariant,
                             ),
                           ),
                           const SizedBox(height: 28),
@@ -108,7 +121,8 @@ class _LoginScreenState extends State<LoginScreen> {
                               labelText: 'Usuário',
                               prefixIcon: Icon(Icons.person_outline),
                             ),
-                            validator: (valor) => valor == null || valor.trim().isEmpty
+                            validator: (valor) =>
+                                valor == null || valor.trim().isEmpty
                                 ? 'Informe o usuário.'
                                 : null,
                           ),
@@ -123,7 +137,9 @@ class _LoginScreenState extends State<LoginScreen> {
                               labelText: 'Senha',
                               prefixIcon: const Icon(Icons.lock_outline),
                               suffixIcon: IconButton(
-                                tooltip: _senhaVisivel ? 'Ocultar senha' : 'Mostrar senha',
+                                tooltip: _senhaVisivel
+                                    ? 'Ocultar senha'
+                                    : 'Mostrar senha',
                                 icon: Icon(
                                   _senhaVisivel
                                       ? Icons.visibility_off_outlined
@@ -146,23 +162,33 @@ class _LoginScreenState extends State<LoginScreen> {
                                 vertical: 10,
                               ),
                               decoration: BoxDecoration(
-                                color: Colors.red.shade50,
+                                color: escuro
+                                    ? Colors.red.withValues(alpha: 0.15)
+                                    : Colors.red.shade50,
                                 borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: Colors.red.shade200),
+                                border: Border.all(
+                                  color: escuro
+                                      ? Colors.red.withValues(alpha: 0.4)
+                                      : Colors.red.shade200,
+                                ),
                               ),
                               child: Row(
                                 children: [
                                   Icon(
                                     Icons.error_outline,
                                     size: 20,
-                                    color: Colors.red.shade700,
+                                    color: escuro
+                                        ? Colors.redAccent.shade100
+                                        : Colors.red.shade700,
                                   ),
                                   const SizedBox(width: 8),
                                   Expanded(
                                     child: Text(
                                       _erro!,
                                       style: TextStyle(
-                                        color: Colors.red.shade700,
+                                        color: escuro
+                                            ? Colors.redAccent.shade100
+                                            : Colors.red.shade700,
                                         fontSize: 13,
                                       ),
                                     ),

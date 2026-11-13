@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:printing/printing.dart';
+
 import '../../domain/models/fechamento_rateio.dart';
 import '../../domain/services/pdf_recibo_service.dart';
+import '../widgets/botao_tema.dart';
 
 /// Tela de visualização e impressão em PDF dos recibos de condomínio.
 class RecibosPdfScreen extends StatelessWidget {
@@ -22,9 +24,7 @@ class RecibosPdfScreen extends StatelessWidget {
         : 'Recibos • ${comp.mesReferencia}/${comp.anoReferencia}';
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(titulo),
-      ),
+      appBar: AppBar(title: Text(titulo), actions: const [BotaoTema()]),
       body: PdfPreview(
         build: (format) => PdfReciboService.gerarPdf(
           fechamento: fechamento,

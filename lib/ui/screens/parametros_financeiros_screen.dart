@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+
 import '../../core/currency_utils.dart';
 import '../../core/field_help_definitions.dart';
 import '../../domain/models/parametros_financeiros.dart';
 import '../widgets/app_shell.dart';
+import '../widgets/botao_tema.dart';
 import '../widgets/contextual_help_field.dart';
 
 class ParametrosFinanceirosScreen extends StatefulWidget {
@@ -41,8 +43,7 @@ class _ParametrosFinanceirosScreenState
     _fatorController = TextEditingController(
       text: widget.iniciais.fatorAtraso.toStringAsFixed(2).replaceAll('.', ','),
     );
-    _divisor =
-        widget.iniciais.divisorRateioSindico == 10 ? 10 : 11;
+    _divisor = widget.iniciais.divisorRateioSindico == 10 ? 10 : 11;
   }
 
   @override
@@ -80,6 +81,7 @@ class _ParametrosFinanceirosScreenState
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
         title: const Text('Juros e Percentuais'),
@@ -89,6 +91,7 @@ class _ParametrosFinanceirosScreenState
             tooltip: 'Aplicar ao mês',
             onPressed: _aplicar,
           ),
+          const BotaoTema(),
         ],
       ),
       body: Form(
@@ -111,8 +114,9 @@ class _ParametrosFinanceirosScreenState
                         child: ContextualHelpField(
                           helpInfo: FieldHelpCatalog.jurosMoraMensal,
                           controller: _jurosController,
-                          keyboardType:
-                              const TextInputType.numberWithOptions(decimal: true),
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
                           suffixText: '% a.m.',
                           onChanged: (_) => setState(() {}),
                           validator: (valor) {
@@ -129,8 +133,9 @@ class _ParametrosFinanceirosScreenState
                         child: ContextualHelpField(
                           helpInfo: FieldHelpCatalog.multaMora,
                           controller: _multaController,
-                          keyboardType:
-                              const TextInputType.numberWithOptions(decimal: true),
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
                           suffixText: '%',
                           onChanged: (_) => setState(() {}),
                           validator: (valor) {
@@ -155,8 +160,9 @@ class _ParametrosFinanceirosScreenState
                   ContextualHelpField(
                     helpInfo: FieldHelpCatalog.fatorAtraso,
                     controller: _fatorController,
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
                     onChanged: (_) => setState(() {}),
                     validator: (valor) {
                       final fator = CurrencyUtils.parse(valor);
@@ -173,7 +179,7 @@ class _ParametrosFinanceirosScreenState
                       vertical: 10,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.blue.shade50,
+                      color: theme.colorScheme.primary.withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Row(
@@ -181,7 +187,7 @@ class _ParametrosFinanceirosScreenState
                         Icon(
                           Icons.info_outline,
                           size: 18,
-                          color: Colors.blue.shade800,
+                          color: theme.colorScheme.primary,
                         ),
                         const SizedBox(width: 8),
                         Expanded(
@@ -190,7 +196,7 @@ class _ParametrosFinanceirosScreenState
                             '${CurrencyUtils.formatPercent(_acrescimoAte30Dias)}',
                             style: TextStyle(
                               fontSize: 13,
-                              color: Colors.blue.shade900,
+                              color: theme.colorScheme.primary,
                             ),
                           ),
                         ),
@@ -204,7 +210,8 @@ class _ParametrosFinanceirosScreenState
               const SizedBox(height: 16),
               _buildSecao(
                 titulo: 'Rateio do síndico',
-                subtitulo: 'Divisor usado para distribuir a isenção operacional',
+                subtitulo:
+                    'Divisor usado para distribuir a isenção operacional',
                 icone: Icons.account_balance,
                 children: [
                   Row(
@@ -223,7 +230,7 @@ class _ParametrosFinanceirosScreenState
                               borderRadius: BorderRadius.circular(8),
                             ),
                             filled: true,
-                            fillColor: Colors.white,
+                            fillColor: theme.colorScheme.surface,
                           ),
                           items: const [
                             DropdownMenuItem(
@@ -232,7 +239,9 @@ class _ParametrosFinanceirosScreenState
                             ),
                             DropdownMenuItem(
                               value: 10,
-                              child: Text('10 unidades (Fechamento Exato 100%)'),
+                              child: Text(
+                                '10 unidades (Fechamento Exato 100%)',
+                              ),
                             ),
                           ],
                           onChanged: (valor) {
@@ -246,8 +255,10 @@ class _ParametrosFinanceirosScreenState
                         icon: const Icon(Icons.help_outline, size: 20),
                         color: Theme.of(context).colorScheme.primary,
                         tooltip: 'Ver ajuda do divisor do rateio',
-                        constraints:
-                            const BoxConstraints(minWidth: 40, minHeight: 40),
+                        constraints: const BoxConstraints(
+                          minWidth: 40,
+                          minHeight: 40,
+                        ),
                         onPressed: () => ContextualHelpField.mostrarAjuda(
                           context,
                           FieldHelpCatalog.divisorRateioSindico,
@@ -277,12 +288,15 @@ class _ParametrosFinanceirosScreenState
   }
 
   Widget _buildCabecalho() {
+    final theme = Theme.of(context);
     return Card(
       elevation: 0,
-      color: Colors.blue.shade50,
+      color: theme.colorScheme.primary.withValues(alpha: 0.08),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(14),
-        side: BorderSide(color: Colors.blue.shade100),
+        side: BorderSide(
+          color: theme.colorScheme.primary.withValues(alpha: 0.25),
+        ),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -310,7 +324,7 @@ class _ParametrosFinanceirosScreenState
                     'Estes parâmetros valem apenas para este mês.',
                     style: TextStyle(
                       fontSize: 12,
-                      color: Colors.grey.shade700,
+                      color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
                 ],
@@ -333,7 +347,7 @@ class _ParametrosFinanceirosScreenState
       elevation: 0,
       margin: EdgeInsets.zero,
       clipBehavior: Clip.antiAlias,
-      color: Colors.white,
+      color: theme.colorScheme.surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(14),
         side: BorderSide(
@@ -367,7 +381,7 @@ class _ParametrosFinanceirosScreenState
                         subtitulo,
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.grey.shade700,
+                          color: theme.colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ],
@@ -389,6 +403,7 @@ class _ParametrosFinanceirosScreenState
   }
 
   Widget _buildSimulacaoFaixas() {
+    final theme = Theme.of(context);
     const base = 1000.0;
     final fator = _fator > 0 ? _fator : 0.95;
     final ate30 = base / fator;
@@ -411,7 +426,7 @@ class _ParametrosFinanceirosScreenState
 
     return Container(
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade300),
+        border: Border.all(color: theme.colorScheme.outlineVariant),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
@@ -419,19 +434,17 @@ class _ParametrosFinanceirosScreenState
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
-              color: Colors.grey.shade100,
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(8)),
+              color: theme.colorScheme.surfaceContainerHighest,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(8),
+              ),
             ),
             child: Row(
               children: [
                 const Expanded(
                   child: Text(
                     'Simulação sobre R\$ 1.000,00',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13,
-                    ),
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                   ),
                 ),
                 Text(
@@ -439,7 +452,7 @@ class _ParametrosFinanceirosScreenState
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 13,
-                    color: Colors.grey.shade700,
+                    color: theme.colorScheme.onSurfaceVariant,
                   ),
                 ),
               ],
@@ -451,7 +464,9 @@ class _ParametrosFinanceirosScreenState
               decoration: BoxDecoration(
                 border: i < linhas.length - 1
                     ? Border(
-                        bottom: BorderSide(color: Colors.grey.shade200),
+                        bottom: BorderSide(
+                          color: theme.colorScheme.outlineVariant,
+                        ),
                       )
                     : null,
               ),

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+
 import '../../core/supabase_config.dart';
 import '../../data/backend.dart';
 import 'app_drawer.dart';
 import 'auth_gate.dart';
+import 'botao_tema.dart';
 import 'navegacao.dart';
 
 /// Layout principal da aplicação.
@@ -128,17 +130,13 @@ class PainelScaffold extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Flexible(
-              child: Text(
-                titulo,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
+              child: Text(titulo, maxLines: 1, overflow: TextOverflow.ellipsis),
             ),
             const SizedBox(width: 12),
             const IndicadorBackend(),
           ],
         ),
-        actions: actions,
+        actions: [...actions, const BotaoTema()],
         bottom: bottom,
       ),
       drawer: usarRail
@@ -181,13 +179,22 @@ class _NavegacaoLateral extends StatelessWidget {
       selectedIndex: indice < 0 ? 0 : indice,
       onDestinationSelected: (i) => onSelecionar(destinos[i]),
       leading: Padding(
-        padding: EdgeInsets.fromLTRB(estendida ? 16 : 0, 20, estendida ? 16 : 0, 12),
+        padding: EdgeInsets.fromLTRB(
+          estendida ? 16 : 0,
+          20,
+          estendida ? 16 : 0,
+          12,
+        ),
         child: estendida
             ? SizedBox(
                 width: 218,
                 child: Row(
                   children: [
-                    Icon(Icons.apartment, color: theme.colorScheme.primary, size: 30),
+                    Icon(
+                      Icons.apartment,
+                      color: theme.colorScheme.primary,
+                      size: 30,
+                    ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Column(
@@ -205,7 +212,7 @@ class _NavegacaoLateral extends StatelessWidget {
                           Text(
                             'Gestão de Rateio',
                             style: theme.textTheme.bodySmall?.copyWith(
-                              color: Colors.grey.shade600,
+                              color: theme.colorScheme.onSurfaceVariant,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -219,8 +226,13 @@ class _NavegacaoLateral extends StatelessWidget {
             : Padding(
                 padding: const EdgeInsets.only(top: 8),
                 child: CircleAvatar(
-                  backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.1),
-                  child: Icon(Icons.apartment, color: theme.colorScheme.primary),
+                  backgroundColor: theme.colorScheme.primary.withValues(
+                    alpha: 0.1,
+                  ),
+                  child: Icon(
+                    Icons.apartment,
+                    color: theme.colorScheme.primary,
+                  ),
                 ),
               ),
       ),
@@ -275,9 +287,12 @@ class ConteudoCentralizado extends StatelessWidget {
 class IndicadorBackend extends StatelessWidget {
   const IndicadorBackend({super.key});
 
-  Color get _cor => Backend.usaSupabase
-      ? const Color(0xFF2E7D32)
-      : const Color(0xFFB26A00);
+  Color _cor(bool escuro) {
+    if (Backend.usaSupabase) {
+      return escuro ? Colors.greenAccent.shade200 : const Color(0xFF2E7D32);
+    }
+    return escuro ? Colors.orangeAccent.shade200 : const Color(0xFFB26A00);
+  }
 
   String get _rotulo => Backend.usaSupabase ? 'Supabase' : 'Local';
 
@@ -291,24 +306,34 @@ class IndicadorBackend extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final escuro = theme.brightness == Brightness.dark;
+    final cor = _cor(escuro);
+
     return Tooltip(
       message: _detalhe,
       child: ActionChip(
         avatar: Container(
           width: 8,
           height: 8,
-          decoration: BoxDecoration(color: _cor, shape: BoxShape.circle),
+          decoration: BoxDecoration(color: cor, shape: BoxShape.circle),
         ),
         label: Text(
           _rotulo,
           style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w600,
-            color: _cor,
+            color: cor,
           ),
         ),
-        backgroundColor: Colors.white.withValues(alpha: 0.95),
-        side: BorderSide(color: Colors.white.withValues(alpha: 0.6)),
+        backgroundColor: escuro
+            ? const Color(0xFF2C2C2C)
+            : Colors.white.withValues(alpha: 0.95),
+        side: BorderSide(
+          color: escuro
+              ? Colors.white.withValues(alpha: 0.15)
+              : Colors.white.withValues(alpha: 0.6),
+        ),
         visualDensity: VisualDensity.compact,
         materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
         onPressed: () {

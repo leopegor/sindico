@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../../core/theme_controller.dart';
 import 'auth_gate.dart';
 import 'navegacao.dart';
 
@@ -12,22 +14,25 @@ class AppDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final themeController = ThemeScope.maybeOf(context);
 
     return Drawer(
       child: Column(
         children: [
           UserAccountsDrawerHeader(
-            decoration: BoxDecoration(
-              color: theme.colorScheme.primary,
-            ),
+            decoration: BoxDecoration(color: theme.colorScheme.primary),
             accountName: const Text(
               'Condomínio Evaristo Lucchese',
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
             accountEmail: const Text('Gestão de Rateio e Recibos Mensais'),
-            currentAccountPicture: const CircleAvatar(
-              backgroundColor: Colors.white,
-              child: Icon(Icons.apartment, size: 40, color: Colors.blueAccent),
+            currentAccountPicture: CircleAvatar(
+              backgroundColor: theme.colorScheme.surface,
+              child: Icon(
+                Icons.apartment,
+                size: 40,
+                color: theme.colorScheme.primary,
+              ),
             ),
           ),
           for (final destino in DestinoApp.values)
@@ -44,6 +49,17 @@ class AppDrawer extends StatelessWidget {
               },
             ),
           const Divider(),
+          if (themeController != null)
+            SwitchListTile(
+              secondary: Icon(
+                themeController.escuro
+                    ? Icons.dark_mode_outlined
+                    : Icons.light_mode_outlined,
+              ),
+              title: const Text('Tema escuro'),
+              value: themeController.escuro,
+              onChanged: (valor) => themeController.definirEscuro(valor),
+            ),
           const Spacer(),
           if (AuthScope.maybeOf(context) != null)
             ListTile(
@@ -53,7 +69,9 @@ class AppDrawer extends StatelessWidget {
                 final auth = AuthScope.maybeOf(context);
                 Navigator.of(context).pop();
                 if (auth != null) {
-                  WidgetsBinding.instance.addPostFrameCallback((_) => auth.sair());
+                  WidgetsBinding.instance.addPostFrameCallback(
+                    (_) => auth.sair(),
+                  );
                 }
               },
             ),
@@ -62,7 +80,9 @@ class AppDrawer extends StatelessWidget {
             child: Text(
               'Versão 1.0.0 • Offline First\nBaseado na aba DADO_RECIBOS',
               textAlign: TextAlign.center,
-              style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey.shade600),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
             ),
           ),
         ],

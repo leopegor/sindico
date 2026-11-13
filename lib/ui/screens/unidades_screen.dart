@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../data/database/unidade_repository.dart';
 import '../../domain/models/unidade.dart';
 import '../widgets/app_shell.dart';
@@ -46,8 +47,12 @@ class _UnidadesScreenState extends State<UnidadesScreen> {
 
   Future<void> _editarUnidade(Unidade u) async {
     final nomeController = TextEditingController(text: u.nomeMorador);
-    final pessoasController = TextEditingController(text: u.numeroPessoas.toString());
-    final areaController = TextEditingController(text: u.areaPrivativa.toString());
+    final pessoasController = TextEditingController(
+      text: u.numeroPessoas.toString(),
+    );
+    final areaController = TextEditingController(
+      text: u.areaPrivativa.toString(),
+    );
     bool isSindico = u.isSindico;
     bool policiamento = u.participaPoliciamento;
     final valorPoliciamentoController = TextEditingController(
@@ -79,8 +84,9 @@ class _UnidadesScreenState extends State<UnidadesScreen> {
                           labelText: 'Nome do Morador / Proprietário',
                           isDense: true,
                         ),
-                        validator: (v) =>
-                            v == null || v.trim().isEmpty ? 'Informe o nome' : null,
+                        validator: (v) => v == null || v.trim().isEmpty
+                            ? 'Informe o nome'
+                            : null,
                       ),
                       const SizedBox(height: 12),
                       if (!u.isLoja) ...[
@@ -94,7 +100,8 @@ class _UnidadesScreenState extends State<UnidadesScreen> {
                           ),
                           validator: (v) {
                             final n = int.tryParse(v ?? '');
-                            if (n == null || n <= 0) return 'Mínimo de 1 pessoa';
+                            if (n == null || n <= 0)
+                              return 'Mínimo de 1 pessoa';
                             return null;
                           },
                         ),
@@ -102,7 +109,9 @@ class _UnidadesScreenState extends State<UnidadesScreen> {
                       ],
                       TextFormField(
                         controller: areaController,
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
                         decoration: const InputDecoration(
                           labelText: 'Área Privativa (m²)',
                           suffixText: 'm²',
@@ -119,21 +128,26 @@ class _UnidadesScreenState extends State<UnidadesScreen> {
                       if (!u.isLoja)
                         _buildDialogSwitch(
                           titulo: 'É a unidade do(a) Síndico(a)?',
-                          subtitulo: 'Garante a isenção operacional da convenção',
+                          subtitulo:
+                              'Garante a isenção operacional da convenção',
                           valor: isSindico,
-                          onChanged: (val) => setDialogState(() => isSindico = val),
+                          onChanged: (val) =>
+                              setDialogState(() => isSindico = val),
                         ),
                       _buildDialogSwitch(
                         titulo: 'Policiamento Comunitário',
                         subtitulo: 'Contribui com o policiamento comunitário',
                         valor: policiamento,
-                        onChanged: (val) => setDialogState(() => policiamento = val),
+                        onChanged: (val) =>
+                            setDialogState(() => policiamento = val),
                       ),
                       if (policiamento) ...[
                         const SizedBox(height: 4),
                         TextFormField(
                           controller: valorPoliciamentoController,
-                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
                           decoration: const InputDecoration(
                             labelText: 'Valor Policiamento',
                             prefixText: 'R\$ ',
@@ -170,10 +184,16 @@ class _UnidadesScreenState extends State<UnidadesScreen> {
         final novaUnidade = u.copyWith(
           nomeMorador: nomeController.text.trim(),
           numeroPessoas: u.isLoja ? 0 : int.parse(pessoasController.text),
-          areaPrivativa: double.tryParse(areaController.text.replaceAll(',', '.')) ?? u.areaPrivativa,
+          areaPrivativa:
+              double.tryParse(areaController.text.replaceAll(',', '.')) ??
+              u.areaPrivativa,
           isSindico: isSindico,
           participaPoliciamento: policiamento,
-          valorPoliciamento: double.tryParse(valorPoliciamentoController.text.replaceAll(',', '.')) ?? 0.0,
+          valorPoliciamento:
+              double.tryParse(
+                valorPoliciamentoController.text.replaceAll(',', '.'),
+              ) ??
+              0.0,
         );
 
         if (isSindico) {
@@ -183,7 +203,9 @@ class _UnidadesScreenState extends State<UnidadesScreen> {
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Unidade ${u.descricaoExibicao} atualizada.')),
+            SnackBar(
+              content: Text('Unidade ${u.descricaoExibicao} atualizada.'),
+            ),
           );
         }
         _carregarUnidades();
@@ -227,7 +249,9 @@ class _UnidadesScreenState extends State<UnidadesScreen> {
         await _unidadeRepo.restaurarPadrao();
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Cadastro restaurado para o padrão original.')),
+            const SnackBar(
+              content: Text('Cadastro restaurado para o padrão original.'),
+            ),
           );
         }
         _carregarUnidades();
@@ -291,11 +315,17 @@ class _UnidadesScreenState extends State<UnidadesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final totalMoradores =
-        _unidades.fold<int>(0, (acc, u) => acc + (u.isLoja ? 0 : u.numeroPessoas));
-    final totalArea = _unidades.fold<double>(0, (acc, u) => acc + u.areaPrivativa);
-    final comMorador =
-        _unidades.where((u) => u.nomeMorador.trim().isNotEmpty).length;
+    final totalMoradores = _unidades.fold<int>(
+      0,
+      (acc, u) => acc + (u.isLoja ? 0 : u.numeroPessoas),
+    );
+    final totalArea = _unidades.fold<double>(
+      0,
+      (acc, u) => acc + u.areaPrivativa,
+    );
+    final comMorador = _unidades
+        .where((u) => u.nomeMorador.trim().isNotEmpty)
+        .length;
     final compacto = MediaQuery.sizeOf(context).width < 600;
 
     return DefaultTabController(
@@ -322,7 +352,10 @@ class _UnidadesScreenState extends State<UnidadesScreen> {
                 indicatorWeight: 3,
                 dividerColor: Colors.transparent,
                 tabs: [
-                  Tab(icon: Icon(Icons.home_work_outlined), text: 'Cadastro de Unidades'),
+                  Tab(
+                    icon: Icon(Icons.home_work_outlined),
+                    text: 'Cadastro de Unidades',
+                  ),
                   Tab(icon: Icon(Icons.balance), text: 'Balanço de Pagamentos'),
                 ],
               ),
@@ -334,13 +367,13 @@ class _UnidadesScreenState extends State<UnidadesScreen> {
             _carregando
                 ? const Center(child: CircularProgressIndicator())
                 : _erro != null
-                    ? _buildErro()
-                    : _buildConteudo(
-                        totalMoradores: totalMoradores,
-                        totalArea: totalArea,
-                        comMorador: comMorador,
-                        compacto: compacto,
-                      ),
+                ? _buildErro()
+                : _buildConteudo(
+                    totalMoradores: totalMoradores,
+                    totalArea: totalArea,
+                    comMorador: comMorador,
+                    compacto: compacto,
+                  ),
             const BalancoPagamentosScreen(embutido: true),
           ],
         ),
@@ -367,17 +400,23 @@ class _UnidadesScreenState extends State<UnidadesScreen> {
           elevation: 0,
           margin: EdgeInsets.zero,
           clipBehavior: Clip.antiAlias,
-          color: Colors.white,
+          color: theme.colorScheme.surface,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
-            side: BorderSide(color: Colors.blue.shade100, width: 1.2),
+            side: BorderSide(
+              color: theme.colorScheme.primary.withValues(alpha: 0.25),
+              width: 1.2,
+            ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Container(
-                color: Colors.blue.shade50.withValues(alpha: 0.6),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                color: theme.colorScheme.primary.withValues(alpha: 0.08),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 14,
+                ),
                 child: Row(
                   children: [
                     Container(
@@ -386,7 +425,11 @@ class _UnidadesScreenState extends State<UnidadesScreen> {
                         color: theme.colorScheme.primary,
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.apartment, color: Colors.white, size: 20),
+                      child: const Icon(
+                        Icons.apartment,
+                        color: Colors.white,
+                        size: 20,
+                      ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -397,21 +440,22 @@ class _UnidadesScreenState extends State<UnidadesScreen> {
                             'Unidades do Condomínio',
                             style: theme.textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.bold,
-                              color: Colors.black87,
+                              color: theme.colorScheme.onSurface,
                             ),
                           ),
                           const SizedBox(height: 2),
                           Text(
                             '$total unidades • $totalMoradores moradores • ${totalArea.toStringAsFixed(2)} m²',
                             style: theme.textTheme.bodySmall?.copyWith(
-                              color: Colors.grey.shade700,
+                              color: theme.colorScheme.onSurfaceVariant,
                             ),
                           ),
                         ],
                       ),
                     ),
                     Tooltip(
-                      message: '$comMorador de $total unidades com morador informado',
+                      message:
+                          '$comMorador de $total unidades com morador informado',
                       child: SizedBox(
                         width: 90,
                         child: ClipRRect(
@@ -419,9 +463,11 @@ class _UnidadesScreenState extends State<UnidadesScreen> {
                           child: LinearProgressIndicator(
                             value: proporcao,
                             minHeight: 6,
-                            backgroundColor: Colors.blue.shade100,
-                            valueColor:
-                                AlwaysStoppedAnimation<Color>(theme.colorScheme.primary),
+                            backgroundColor: theme.colorScheme.primary
+                                .withValues(alpha: 0.15),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              theme.colorScheme.primary,
+                            ),
                           ),
                         ),
                       ),
@@ -442,7 +488,8 @@ class _UnidadesScreenState extends State<UnidadesScreen> {
                     mainAxisSpacing: 12,
                     crossAxisSpacing: 12,
                   ),
-                  itemBuilder: (ctx, index) => _buildUnidadeTile(_unidades[index]),
+                  itemBuilder: (ctx, index) =>
+                      _buildUnidadeTile(_unidades[index]),
                 ),
               ),
             ],
@@ -453,12 +500,15 @@ class _UnidadesScreenState extends State<UnidadesScreen> {
   }
 
   Widget _buildLegenda() {
+    final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.blue.shade50,
+        color: theme.colorScheme.primary.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.blue.shade100),
+        border: Border.all(
+          color: theme.colorScheme.primary.withValues(alpha: 0.25),
+        ),
       ),
       child: Wrap(
         spacing: 18,
@@ -488,22 +538,27 @@ class _UnidadesScreenState extends State<UnidadesScreen> {
         const SizedBox(width: 8),
         Text(
           texto,
-          style: TextStyle(fontSize: 12, color: Colors.blue.shade900),
+          style: TextStyle(
+            fontSize: 12,
+            color: Theme.of(context).colorScheme.primary,
+          ),
         ),
       ],
     );
   }
 
   Widget _buildUnidadeTile(Unidade u) {
+    final theme = Theme.of(context);
+    final escuro = theme.brightness == Brightness.dark;
     final cor = u.isSindico
-        ? const Color(0xFFB26A00)
+        ? (escuro ? Colors.amberAccent.shade200 : const Color(0xFFB26A00))
         : u.isLoja
-            ? const Color(0xFF6A1B9A)
-            : const Color(0xFF1565C0);
+        ? (escuro ? Colors.purpleAccent.shade100 : const Color(0xFF6A1B9A))
+        : theme.colorScheme.primary;
     final icone = u.isLoja ? Icons.storefront : Icons.home;
 
     return Material(
-      color: cor.withValues(alpha: 0.06),
+      color: cor.withValues(alpha: escuro ? 0.12 : 0.06),
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
@@ -544,27 +599,44 @@ class _UnidadesScreenState extends State<UnidadesScreen> {
                 u.nomeMorador.trim().isEmpty
                     ? 'Sem morador cadastrado'
                     : u.nomeMorador,
-                style: TextStyle(fontSize: 12, color: Colors.grey.shade800),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: theme.colorScheme.onSurface,
+                ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
               Row(
                 children: [
                   if (!u.isLoja) ...[
-                    Icon(Icons.people_outline, size: 13, color: Colors.grey.shade700),
+                    Icon(
+                      Icons.people_outline,
+                      size: 13,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
                     const SizedBox(width: 3),
                     Text(
                       '${u.numeroPessoas}',
-                      style: TextStyle(fontSize: 12, color: Colors.grey.shade800),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
                     ),
                     const SizedBox(width: 10),
                   ],
-                  Icon(Icons.square_foot, size: 13, color: Colors.grey.shade700),
+                  Icon(
+                    Icons.square_foot,
+                    size: 13,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
                   const SizedBox(width: 3),
                   Expanded(
                     child: Text(
                       '${u.areaPrivativa.toStringAsFixed(2)} m²',
-                      style: TextStyle(fontSize: 12, color: Colors.grey.shade800),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -576,7 +648,10 @@ class _UnidadesScreenState extends State<UnidadesScreen> {
                   Expanded(
                     child: Text(
                       'Fração ideal: ${(u.fracaoIdeal * 100).toStringAsFixed(2)}%',
-                      style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -606,6 +681,7 @@ class _UnidadesScreenState extends State<UnidadesScreen> {
   }
 
   Widget _buildErro() {
+    final theme = Theme.of(context);
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -623,7 +699,10 @@ class _UnidadesScreenState extends State<UnidadesScreen> {
             Text(
               _erro ?? 'Erro desconhecido',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+              style: TextStyle(
+                color: theme.colorScheme.onSurfaceVariant,
+                fontSize: 12,
+              ),
             ),
             const SizedBox(height: 24),
             FilledButton.icon(

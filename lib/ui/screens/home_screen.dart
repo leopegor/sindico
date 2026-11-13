@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+
 import '../../core/currency_utils.dart';
 import '../../core/meses.dart';
 import '../../data/database/competencia_repository.dart';
@@ -166,7 +167,9 @@ class _HomeScreenState extends State<HomeScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Competência ${comp.mesReferencia}/${comp.anoReferencia} excluída.'),
+              content: Text(
+                'Competência ${comp.mesReferencia}/${comp.anoReferencia} excluída.',
+              ),
             ),
           );
         }
@@ -189,7 +192,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final dateFormat = DateFormat('dd/MM/yyyy');
     final acao = await showModalBottomSheet<String>(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       showDragHandle: true,
       constraints: const BoxConstraints(maxWidth: 520),
       shape: const RoundedRectangleBorder(
@@ -216,17 +219,46 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(height: 4),
                   Text(
                     'Vencimento: ${dateFormat.format(comp.dataVencimento)} • Síndico(a): ${comp.nomeSindico}',
-                    style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(ctx).colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ],
               ),
             ),
             const Divider(height: 1),
-            _buildAcaoTile(ctx, Icons.edit_outlined, 'Editar Lançamentos', 'editar'),
-            _buildAcaoTile(ctx, Icons.table_chart_outlined, 'Demonstrativo de Rateio', 'demonstrativo'),
-            _buildAcaoTile(ctx, Icons.receipt_long_outlined, '11 Recibos', 'recibos'),
-            _buildAcaoTile(ctx, Icons.picture_as_pdf_outlined, 'Gerar PDF', 'pdf'),
-            _buildAcaoTile(ctx, Icons.delete_outline, 'Excluir Competência', 'excluir', vermelho: true),
+            _buildAcaoTile(
+              ctx,
+              Icons.edit_outlined,
+              'Editar Lançamentos',
+              'editar',
+            ),
+            _buildAcaoTile(
+              ctx,
+              Icons.table_chart_outlined,
+              'Demonstrativo de Rateio',
+              'demonstrativo',
+            ),
+            _buildAcaoTile(
+              ctx,
+              Icons.receipt_long_outlined,
+              '11 Recibos',
+              'recibos',
+            ),
+            _buildAcaoTile(
+              ctx,
+              Icons.picture_as_pdf_outlined,
+              'Gerar PDF',
+              'pdf',
+            ),
+            _buildAcaoTile(
+              ctx,
+              Icons.delete_outline,
+              'Excluir Competência',
+              'excluir',
+              vermelho: true,
+            ),
             const SizedBox(height: 8),
           ],
         ),
@@ -255,12 +287,15 @@ class _HomeScreenState extends State<HomeScreen> {
     String valor, {
     bool vermelho = false,
   }) {
-    final cor = vermelho ? Colors.red : Theme.of(ctx).colorScheme.primary;
+    final theme = Theme.of(ctx);
+    final cor = vermelho ? Colors.red : theme.colorScheme.primary;
     return ListTile(
       leading: Icon(icone, color: cor),
       title: Text(
         titulo,
-        style: TextStyle(color: vermelho ? Colors.red : Colors.black87),
+        style: TextStyle(
+          color: vermelho ? Colors.red : theme.colorScheme.onSurface,
+        ),
       ),
       onTap: () => Navigator.of(ctx).pop(valor),
     );
@@ -270,7 +305,8 @@ class _HomeScreenState extends State<HomeScreen> {
   Map<int, Map<int, Competencia>> _agruparPorAno() {
     final agrupado = <int, Map<int, Competencia>>{};
     for (final comp in _competencias) {
-      final mes = indiceMesPorNome(comp.mesReferencia) ?? comp.dataVencimento.month;
+      final mes =
+          indiceMesPorNome(comp.mesReferencia) ?? comp.dataVencimento.month;
       agrupado.putIfAbsent(comp.anoReferencia, () => {})[mes] = comp;
     }
     return agrupado;
@@ -296,8 +332,8 @@ class _HomeScreenState extends State<HomeScreen> {
       body: _carregando
           ? const Center(child: CircularProgressIndicator())
           : _erro != null
-              ? _buildErro()
-              : _buildConteudo(),
+          ? _buildErro()
+          : _buildConteudo(),
     );
   }
 
@@ -327,22 +363,29 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildLegenda() {
+    final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.blue.shade50,
+        color: theme.colorScheme.primary.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.blue.shade100),
+        border: Border.all(
+          color: theme.colorScheme.primary.withValues(alpha: 0.25),
+        ),
       ),
       child: Row(
         children: [
-          _buildLegendaItem(const Color(0xFF1565C0), 'Mês lançado — clique para abrir o demonstrativo ou use ⋮ para editar, recibos e PDF'),
+          _buildLegendaItem(
+            theme.colorScheme.primary,
+            'Mês lançado — clique para abrir o demonstrativo ou use ⋮ para editar, recibos e PDF',
+          ),
         ],
       ),
     );
   }
 
   Widget _buildLegendaItem(Color cor, String texto) {
+    final theme = Theme.of(context);
     return Expanded(
       child: Row(
         children: [
@@ -359,7 +402,7 @@ class _HomeScreenState extends State<HomeScreen> {
           Expanded(
             child: Text(
               texto,
-              style: TextStyle(fontSize: 12, color: Colors.blue.shade900),
+              style: TextStyle(fontSize: 12, color: theme.colorScheme.primary),
             ),
           ),
         ],
@@ -380,16 +423,19 @@ class _HomeScreenState extends State<HomeScreen> {
       elevation: 0,
       margin: EdgeInsets.zero,
       clipBehavior: Clip.antiAlias,
-      color: Colors.white,
+      color: theme.colorScheme.surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(14),
-        side: BorderSide(color: Colors.blue.shade100, width: 1.2),
+        side: BorderSide(
+          color: theme.colorScheme.primary.withValues(alpha: 0.25),
+          width: 1.2,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Container(
-            color: Colors.blue.shade50.withValues(alpha: 0.6),
+            color: theme.colorScheme.primary.withValues(alpha: 0.08),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             child: Row(
               children: [
@@ -399,7 +445,11 @@ class _HomeScreenState extends State<HomeScreen> {
                     color: theme.colorScheme.primary,
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.calendar_month, color: Colors.white, size: 20),
+                  child: const Icon(
+                    Icons.calendar_month,
+                    color: Colors.white,
+                    size: 20,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -410,14 +460,14 @@ class _HomeScreenState extends State<HomeScreen> {
                         'Ano $ano',
                         style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.bold,
-                          color: Colors.black87,
+                          color: theme.colorScheme.onSurface,
                         ),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         '$total de 12 meses lançados',
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: Colors.grey.shade700,
+                          color: theme.colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ],
@@ -430,8 +480,12 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: LinearProgressIndicator(
                       value: proporcao,
                       minHeight: 6,
-                      backgroundColor: Colors.blue.shade100,
-                      valueColor: AlwaysStoppedAnimation<Color>(theme.colorScheme.primary),
+                      backgroundColor: theme.colorScheme.primary.withValues(
+                        alpha: 0.15,
+                      ),
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        theme.colorScheme.primary,
+                      ),
                     ),
                   ),
                 ),
@@ -469,7 +523,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildMesVazio(int ano, int mes) {
     final theme = Theme.of(context);
     return Material(
-      color: Colors.grey.shade50,
+      color: theme.colorScheme.surfaceContainerHighest,
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
@@ -478,7 +532,10 @@ class _HomeScreenState extends State<HomeScreen> {
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.shade300, width: 1.2),
+            border: Border.all(
+              color: theme.colorScheme.outlineVariant,
+              width: 1.2,
+            ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -492,18 +549,25 @@ class _HomeScreenState extends State<HomeScreen> {
                       style: TextStyle(
                         fontWeight: FontWeight.w600,
                         fontSize: 15,
-                        color: Colors.grey.shade600,
+                        color: theme.colorScheme.onSurfaceVariant,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  Icon(Icons.add_circle_outline, size: 18, color: Colors.grey.shade400),
+                  Icon(
+                    Icons.add_circle_outline,
+                    size: 18,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
                 ],
               ),
               Text(
                 'Não lançado',
-                style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
               ),
               Text(
                 'Clique para lançar',
@@ -523,7 +587,8 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildMesLancado(Competencia comp) {
     final theme = Theme.of(context);
     final dateFormat = DateFormat('dd/MM');
-    final totalContas = comp.valorContaAgua + comp.valorContaEnergia + comp.custoTotalLimpeza;
+    final totalContas =
+        comp.valorContaAgua + comp.valorContaEnergia + comp.custoTotalLimpeza;
 
     return Material(
       color: theme.colorScheme.primary.withValues(alpha: 0.06),
@@ -535,7 +600,10 @@ class _HomeScreenState extends State<HomeScreen> {
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: theme.colorScheme.primary.withValues(alpha: 0.55), width: 1.5),
+            border: Border.all(
+              color: theme.colorScheme.primary.withValues(alpha: 0.55),
+              width: 1.5,
+            ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -545,7 +613,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   Expanded(
                     child: Text(
-                      nomeMesTitulo(indiceMesPorNome(comp.mesReferencia) ?? comp.dataVencimento.month),
+                      nomeMesTitulo(
+                        indiceMesPorNome(comp.mesReferencia) ??
+                            comp.dataVencimento.month,
+                      ),
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 15,
@@ -555,7 +626,11 @@ class _HomeScreenState extends State<HomeScreen> {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  Icon(Icons.check_circle, size: 16, color: Colors.green.shade600),
+                  Icon(
+                    Icons.check_circle,
+                    size: 16,
+                    color: Colors.green.shade600,
+                  ),
                   IconButton(
                     icon: const Icon(Icons.more_vert),
                     iconSize: 18,
@@ -570,11 +645,18 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               Text(
                 'Venc. ${dateFormat.format(comp.dataVencimento)}',
-                style: TextStyle(fontSize: 12, color: Colors.grey.shade800),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
               ),
               Row(
                 children: [
-                  Icon(Icons.receipt_long_outlined, size: 13, color: theme.colorScheme.primary),
+                  Icon(
+                    Icons.receipt_long_outlined,
+                    size: 13,
+                    color: theme.colorScheme.primary,
+                  ),
                   const SizedBox(width: 4),
                   Expanded(
                     child: Text(
@@ -582,7 +664,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
-                        color: Colors.black87,
+                        color: theme.colorScheme.onSurface,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -598,6 +680,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildErro() {
+    final theme = Theme.of(context);
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -615,7 +698,10 @@ class _HomeScreenState extends State<HomeScreen> {
             Text(
               _erro ?? 'Erro desconhecido',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+              style: TextStyle(
+                color: theme.colorScheme.onSurfaceVariant,
+                fontSize: 12,
+              ),
             ),
             const SizedBox(height: 24),
             FilledButton.icon(
@@ -684,10 +770,7 @@ class _AdicionarAnoDialogState extends State<_AdicionarAnoDialog> {
           onPressed: () => Navigator.of(context).pop(),
           child: const Text('Cancelar'),
         ),
-        FilledButton(
-          onPressed: _confirmar,
-          child: const Text('Adicionar'),
-        ),
+        FilledButton(onPressed: _confirmar, child: const Text('Adicionar')),
       ],
     );
   }

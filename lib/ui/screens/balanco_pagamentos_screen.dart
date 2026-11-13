@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+
 import '../../core/currency_utils.dart';
 import '../../data/database/competencia_repository.dart';
 import '../../data/database/divida_repository.dart';
@@ -13,6 +14,7 @@ import '../../domain/models/rateio_unidade.dart';
 import '../../domain/models/unidade.dart';
 import '../../domain/services/calculadora_rateio_service.dart';
 import '../widgets/app_shell.dart';
+import '../widgets/botao_tema.dart';
 
 /// Registro de uma competência anterior em aberto para uma unidade.
 class MesEmAberto {
@@ -76,7 +78,8 @@ class BalancoPagamentosScreen extends StatefulWidget {
   const BalancoPagamentosScreen({super.key, this.embutido = false});
 
   @override
-  State<BalancoPagamentosScreen> createState() => _BalancoPagamentosScreenState();
+  State<BalancoPagamentosScreen> createState() =>
+      _BalancoPagamentosScreenState();
 }
 
 class _BalancoPagamentosScreenState extends State<BalancoPagamentosScreen> {
@@ -131,8 +134,9 @@ class _BalancoPagamentosScreenState extends State<BalancoPagamentosScreen> {
       final pagamentosAnteriores = <int, Map<String, Pagamento>>{};
       for (final comp in anteriores) {
         if (comp.id == null) continue;
-        pagamentosAnteriores[comp.id!] =
-            await _pagamentoRepo.getPorCompetencia(comp.id!);
+        pagamentosAnteriores[comp.id!] = await _pagamentoRepo.getPorCompetencia(
+          comp.id!,
+        );
       }
 
       final dividasManuais = await _dividaRepo.getDividas();
@@ -163,33 +167,38 @@ class _BalancoPagamentosScreenState extends State<BalancoPagamentosScreen> {
         final mesesAbertos = <MesEmAberto>[];
         for (final entry in fechamentosAnteriores) {
           final comp = entry.comp;
-          final pagamentos =
-              comp.id != null ? pagamentosAnteriores[comp.id!] : null;
+          final pagamentos = comp.id != null
+              ? pagamentosAnteriores[comp.id!]
+              : null;
           if (pagamentos?[codigo]?.pago == true) continue;
           final itemAnterior = entry.fechamento.itens.firstWhere(
             (i) => i.unidade.codigo == codigo,
             orElse: () => rateio,
           );
-          mesesAbertos.add(MesEmAberto(
-            competencia: comp,
-            valor: itemAnterior.valorNaData(comp.dataVencimento, agora),
-          ));
+          mesesAbertos.add(
+            MesEmAberto(
+              competencia: comp,
+              valor: itemAnterior.valorNaData(comp.dataVencimento, agora),
+            ),
+          );
         }
 
-        itens.add(ItemBalanco(
-          unidade: rateio.unidade,
-          rateioAtual: rateio,
-          valorMesAtual: rateio.valorNaData(
-            atual.dataVencimento,
-            DateTime.now(),
+        itens.add(
+          ItemBalanco(
+            unidade: rateio.unidade,
+            rateioAtual: rateio,
+            valorMesAtual: rateio.valorNaData(
+              atual.dataVencimento,
+              DateTime.now(),
+            ),
+            pagoMesAtual: pagamento?.pago ?? false,
+            dataPagamento: pagamento?.dataPagamento,
+            valorPago: pagamento?.valorPago,
+            mesesAbertos: mesesAbertos,
+            dividaManual: dividasManuais[codigo],
+            abatimentos: abatimentosPorUnidade[codigo] ?? const [],
           ),
-          pagoMesAtual: pagamento?.pago ?? false,
-          dataPagamento: pagamento?.dataPagamento,
-          valorPago: pagamento?.valorPago,
-          mesesAbertos: mesesAbertos,
-          dividaManual: dividasManuais[codigo],
-          abatimentos: abatimentosPorUnidade[codigo] ?? const [],
-        ));
+        );
       }
 
       if (!mounted) return;
@@ -270,7 +279,9 @@ class _BalancoPagamentosScreenState extends State<BalancoPagamentosScreen> {
             TextField(
               controller: controller,
               autofocus: true,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
               decoration: const InputDecoration(
                 labelText: 'Valor da dívida anterior',
                 prefixText: 'R\$ ',
@@ -281,12 +292,20 @@ class _BalancoPagamentosScreenState extends State<BalancoPagamentosScreen> {
             const SizedBox(height: 8),
             Text(
               'Cálculo automático: ${CurrencyUtils.format(item.dividaCalculada)}',
-              style: TextStyle(fontSize: 11, color: Colors.grey.shade700),
+              style: TextStyle(
+                fontSize: 11,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
             if (item.dividaManual != null)
               Text(
                 'Valor manual atual: ${CurrencyUtils.format(item.dividaManual!.valor)}',
-                style: TextStyle(fontSize: 11, color: Colors.orange.shade800),
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? Colors.orangeAccent.shade200
+                      : Colors.orange.shade800,
+                ),
               ),
           ],
         ),
@@ -333,7 +352,8 @@ class _BalancoPagamentosScreenState extends State<BalancoPagamentosScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-                'Dívida anterior de ${item.unidade.descricaoExibicao} salva em ${CurrencyUtils.format(valor)}.'),
+              'Dívida anterior de ${item.unidade.descricaoExibicao} salva em ${CurrencyUtils.format(valor)}.',
+            ),
           ),
         );
       }
@@ -368,8 +388,9 @@ class _BalancoPagamentosScreenState extends State<BalancoPagamentosScreen> {
               TextFormField(
                 controller: valorController,
                 autofocus: true,
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
                 decoration: const InputDecoration(
                   labelText: 'Valor pago parcialmente',
                   prefixText: 'R\$ ',
@@ -393,7 +414,10 @@ class _BalancoPagamentosScreenState extends State<BalancoPagamentosScreen> {
               const SizedBox(height: 8),
               Text(
                 'Dívida atual: ${CurrencyUtils.format(item.dividaRestante)}',
-                style: TextStyle(fontSize: 11, color: Colors.grey.shade700),
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
               ),
             ],
           ),
@@ -459,7 +483,9 @@ class _BalancoPagamentosScreenState extends State<BalancoPagamentosScreen> {
 
   /// Remove um abatimento após confirmação.
   Future<void> _removerAbatimento(
-      ItemBalanco item, AbatimentoDivida abatimento) async {
+    ItemBalanco item,
+    AbatimentoDivida abatimento,
+  ) async {
     final conf = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -488,8 +514,9 @@ class _BalancoPagamentosScreenState extends State<BalancoPagamentosScreen> {
       await _dividaRepo.removerAbatimento(abatimento.id!);
       if (!mounted) return;
       setState(() {
-        item.abatimentos =
-            item.abatimentos.where((a) => a.id != abatimento.id).toList();
+        item.abatimentos = item.abatimentos
+            .where((a) => a.id != abatimento.id)
+            .toList();
       });
     } catch (e) {
       debugPrint('Erro ao remover abatimento: $e');
@@ -558,13 +585,13 @@ class _BalancoPagamentosScreenState extends State<BalancoPagamentosScreen> {
     final corpo = _carregando
         ? const Center(child: CircularProgressIndicator())
         : _erro != null
-            ? _buildErro()
-            : comp == null
-                ? _buildSemCompetencia()
-                : ConteudoCentralizado(
-                    larguraMaxima: 1200,
-                    child: _buildConteudo(theme, comp),
-                  );
+        ? _buildErro()
+        : comp == null
+        ? _buildSemCompetencia()
+        : ConteudoCentralizado(
+            larguraMaxima: 1200,
+            child: _buildConteudo(theme, comp),
+          );
 
     if (widget.embutido) return corpo;
 
@@ -577,6 +604,7 @@ class _BalancoPagamentosScreenState extends State<BalancoPagamentosScreen> {
             tooltip: 'Recarregar',
             onPressed: _carregando ? null : _carregar,
           ),
+          const BotaoTema(),
         ],
       ),
       body: corpo,
@@ -586,17 +614,19 @@ class _BalancoPagamentosScreenState extends State<BalancoPagamentosScreen> {
   Widget _buildConteudo(ThemeData theme, Competencia comp) {
     final totalUnidades = _itens.length;
     final pagas = _itens.where((i) => i.pagoMesAtual).length;
-    final totalMesAtual =
-        _itens.fold(0.0, (acc, i) => acc + i.valorMesAtual);
+    final totalMesAtual = _itens.fold(0.0, (acc, i) => acc + i.valorMesAtual);
     final totalRecebidoMesAtual = _itens
         .where((i) => i.pagoMesAtual)
         .fold(0.0, (acc, i) => acc + (i.valorPago ?? i.valorMesAtual));
-    final totalDividaAnteriores =
-        _itens.fold(0.0, (acc, i) => acc + i.dividaRestante);
-    final totalAbatido =
-        _itens.fold(0.0, (acc, i) => acc + i.totalAbatimentos);
-    final unidadesDevedoras =
-        _itens.where((i) => i.dividaRestante > 0.001).length;
+    final totalDividaAnteriores = _itens.fold(
+      0.0,
+      (acc, i) => acc + i.dividaRestante,
+    );
+    final totalAbatido = _itens.fold(0.0, (acc, i) => acc + i.totalAbatimentos);
+    final unidadesDevedoras = _itens
+        .where((i) => i.dividaRestante > 0.001)
+        .length;
+    final escuro = theme.brightness == Brightness.dark;
 
     return ListView(
       padding: const EdgeInsets.all(16),
@@ -609,14 +639,22 @@ class _BalancoPagamentosScreenState extends State<BalancoPagamentosScreen> {
           clipBehavior: Clip.antiAlias,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
-            side: BorderSide(color: Colors.blue.shade100, width: 1.2),
+            side: BorderSide(
+              color: Theme.of(context).colorScheme.primary
+                  .withValues(alpha: 0.25),
+              width: 1.2,
+            ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Container(
-                color: Colors.blue.shade50.withValues(alpha: 0.6),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                color: Theme.of(context).colorScheme.primary
+                    .withValues(alpha: 0.08),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 14,
+                ),
                 child: Row(
                   children: [
                     Container(
@@ -625,8 +663,11 @@ class _BalancoPagamentosScreenState extends State<BalancoPagamentosScreen> {
                         color: theme.colorScheme.primary,
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.calendar_month,
-                          color: Colors.white, size: 20),
+                      child: const Icon(
+                        Icons.calendar_month,
+                        color: Colors.white,
+                        size: 20,
+                      ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -637,14 +678,16 @@ class _BalancoPagamentosScreenState extends State<BalancoPagamentosScreen> {
                             'Balanço do Mês',
                             style: theme.textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.bold,
-                              color: Colors.black87,
+                              color: Theme.of(context).colorScheme.onSurface,
                             ),
                           ),
                           const SizedBox(height: 2),
                           Text(
                             '${comp.mesReferencia}/${comp.anoReferencia} • Vencimento: ${_dateFormat.format(comp.dataVencimento)}',
                             style: theme.textTheme.bodySmall?.copyWith(
-                              color: Colors.grey.shade700,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
                             ),
                           ),
                         ],
@@ -657,11 +700,17 @@ class _BalancoPagamentosScreenState extends State<BalancoPagamentosScreen> {
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(4),
                           child: LinearProgressIndicator(
-                            value: totalUnidades == 0 ? 0 : pagas / totalUnidades,
+                            value: totalUnidades == 0
+                                ? 0
+                                : pagas / totalUnidades,
                             minHeight: 6,
-                            backgroundColor: Colors.blue.shade100,
+                            backgroundColor: Theme.of(context)
+                                .colorScheme
+                                .primary
+                                .withValues(alpha: 0.25),
                             valueColor: AlwaysStoppedAnimation<Color>(
-                                Colors.green.shade600),
+                              Colors.green.shade600,
+                            ),
                           ),
                         ),
                       ),
@@ -683,23 +732,52 @@ class _BalancoPagamentosScreenState extends State<BalancoPagamentosScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     _buildResumoGrid([
-                      _buildResumo(Icons.check_circle_outline, 'Pagas',
-                          '$pagas/$totalUnidades', Colors.green.shade800),
-                      _buildResumo(Icons.savings_outlined, 'Recebido (Mês)',
-                          CurrencyUtils.format(totalRecebidoMesAtual),
-                          Colors.green.shade700),
-                      _buildResumo(Icons.schedule_outlined, 'A Receber (Mês)',
-                          CurrencyUtils.format(totalMesAtual),
-                          Colors.blue.shade800),
-                      _buildResumo(Icons.history, 'Dívida Anterior',
-                          CurrencyUtils.format(totalDividaAnteriores),
-                          Colors.red.shade700),
-                      _buildResumo(Icons.payments_outlined, 'Abatido',
-                          CurrencyUtils.format(totalAbatido),
-                          Colors.orange.shade800),
-                      _buildResumo(Icons.warning_amber_outlined, 'Com Pendência',
-                          '$unidadesDevedoras/$totalUnidades',
-                          Colors.red.shade700),
+                      _buildResumo(
+                        Icons.check_circle_outline,
+                        'Pagas',
+                        '$pagas/$totalUnidades',
+                        escuro
+                            ? Colors.greenAccent.shade200
+                            : Colors.green.shade800,
+                      ),
+                      _buildResumo(
+                        Icons.savings_outlined,
+                        'Recebido (Mês)',
+                        CurrencyUtils.format(totalRecebidoMesAtual),
+                        escuro
+                            ? Colors.greenAccent.shade100
+                            : Colors.green.shade700,
+                      ),
+                      _buildResumo(
+                        Icons.schedule_outlined,
+                        'A Receber (Mês)',
+                        CurrencyUtils.format(totalMesAtual),
+                        theme.colorScheme.primary,
+                      ),
+                      _buildResumo(
+                        Icons.history,
+                        'Dívida Anterior',
+                        CurrencyUtils.format(totalDividaAnteriores),
+                        escuro
+                            ? Colors.redAccent.shade100
+                            : Colors.red.shade700,
+                      ),
+                      _buildResumo(
+                        Icons.payments_outlined,
+                        'Abatido',
+                        CurrencyUtils.format(totalAbatido),
+                        escuro
+                            ? Colors.orangeAccent.shade100
+                            : Colors.orange.shade800,
+                      ),
+                      _buildResumo(
+                        Icons.warning_amber_outlined,
+                        'Com Pendência',
+                        '$unidadesDevedoras/$totalUnidades',
+                        escuro
+                            ? Colors.redAccent.shade100
+                            : Colors.red.shade700,
+                      ),
                     ]),
                   ],
                 ),
@@ -726,16 +804,20 @@ class _BalancoPagamentosScreenState extends State<BalancoPagamentosScreen> {
       elevation: 0,
       margin: EdgeInsets.zero,
       clipBehavior: Clip.antiAlias,
-      color: Colors.white,
+      color: Theme.of(context).colorScheme.surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(14),
-        side: BorderSide(color: Colors.blue.shade100, width: 1.2),
+        side: BorderSide(
+          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.25),
+          width: 1.2,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Container(
-            color: Colors.blue.shade50.withValues(alpha: 0.6),
+            color: Theme.of(context).colorScheme.primary
+                .withValues(alpha: 0.08),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             child: Row(
               children: [
@@ -745,7 +827,11 @@ class _BalancoPagamentosScreenState extends State<BalancoPagamentosScreen> {
                     color: theme.colorScheme.primary,
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.apartment, color: Colors.white, size: 20),
+                  child: const Icon(
+                    Icons.apartment,
+                    color: Colors.white,
+                    size: 20,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -756,14 +842,14 @@ class _BalancoPagamentosScreenState extends State<BalancoPagamentosScreen> {
                         'Situação das Unidades',
                         style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.bold,
-                          color: Colors.black87,
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         '$comPendencia de $totalUnidades unidades com pendência',
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: Colors.grey.shade700,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ],
@@ -815,9 +901,11 @@ class _BalancoPagamentosScreenState extends State<BalancoPagamentosScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.blue.shade50,
+        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.blue.shade100),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.25),
+        ),
       ),
       child: Wrap(
         spacing: 18,
@@ -848,7 +936,10 @@ class _BalancoPagamentosScreenState extends State<BalancoPagamentosScreen> {
         const SizedBox(width: 8),
         Text(
           texto,
-          style: TextStyle(fontSize: 12, color: Colors.blue.shade900),
+          style: TextStyle(
+            fontSize: 12,
+            color: Theme.of(context).colorScheme.primary,
+          ),
         ),
       ],
     );
@@ -857,7 +948,7 @@ class _BalancoPagamentosScreenState extends State<BalancoPagamentosScreen> {
   Future<void> _abrirDetalhe(ItemBalanco item) async {
     await showModalBottomSheet<void>(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       showDragHandle: true,
       isScrollControlled: true,
       constraints: const BoxConstraints(maxWidth: 560),
@@ -877,18 +968,23 @@ class _BalancoPagamentosScreenState extends State<BalancoPagamentosScreen> {
   }
 
   Widget _buildTileUnidade(ItemBalanco item) {
+    final theme = Theme.of(context);
+    final escuro = theme.brightness == Brightness.dark;
     final temDivida = item.dividaRestante > 0.001;
     final cor = temDivida
-        ? const Color(0xFFC62828)
+        ? (escuro ? Colors.redAccent.shade100 : const Color(0xFFC62828))
         : item.pagoMesAtual
-            ? const Color(0xFF2E7D32)
-            : const Color(0xFF1565C0);
-    final tag =
-        temDivida ? 'Devedor' : item.pagoMesAtual ? 'Pago' : 'Pendente';
+        ? (escuro ? Colors.greenAccent.shade200 : const Color(0xFF2E7D32))
+        : theme.colorScheme.primary;
+    final tag = temDivida
+        ? 'Devedor'
+        : item.pagoMesAtual
+        ? 'Pago'
+        : 'Pendente';
     final icone = item.unidade.isLoja ? Icons.storefront : Icons.home;
 
     return Material(
-      color: cor.withValues(alpha: 0.06),
+      color: cor.withValues(alpha: escuro ? 0.12 : 0.06),
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
@@ -924,20 +1020,28 @@ class _BalancoPagamentosScreenState extends State<BalancoPagamentosScreen> {
               ),
               Text(
                 item.unidade.nomeMorador,
-                style: TextStyle(fontSize: 12, color: Colors.grey.shade800),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
               Row(
                 children: [
-                  Icon(Icons.receipt_long_outlined,
-                      size: 13, color: Colors.grey.shade700),
+                  Icon(
+                    Icons.receipt_long_outlined,
+                    size: 13,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                   const SizedBox(width: 3),
                   Expanded(
                     child: Text(
                       'Mês: ${CurrencyUtils.format(item.valorMesAtual)}',
-                      style:
-                          TextStyle(fontSize: 12, color: Colors.grey.shade800),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -951,7 +1055,9 @@ class _BalancoPagamentosScreenState extends State<BalancoPagamentosScreen> {
                         ? Icons.warning_amber_rounded
                         : Icons.verified_outlined,
                     size: 13,
-                    color: temDivida ? cor : Colors.grey.shade700,
+                    color: temDivida
+                        ? cor
+                        : Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                   const SizedBox(width: 3),
                   Expanded(
@@ -959,9 +1065,12 @@ class _BalancoPagamentosScreenState extends State<BalancoPagamentosScreen> {
                       'Dívida: ${CurrencyUtils.format(item.dividaRestante)}',
                       style: TextStyle(
                         fontSize: 12,
-                        fontWeight:
-                            temDivida ? FontWeight.bold : FontWeight.normal,
-                        color: temDivida ? cor : Colors.grey.shade800,
+                        fontWeight: temDivida
+                            ? FontWeight.bold
+                            : FontWeight.normal,
+                        color: temDivida
+                            ? cor
+                            : Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -991,7 +1100,6 @@ class _BalancoPagamentosScreenState extends State<BalancoPagamentosScreen> {
     );
   }
 
-
   Widget _buildResumo(IconData icone, String rotulo, String valor, Color cor) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
@@ -1011,7 +1119,10 @@ class _BalancoPagamentosScreenState extends State<BalancoPagamentosScreen> {
                 child: Text(
                   rotulo,
                   style: TextStyle(
-                      fontSize: 11, color: cor, fontWeight: FontWeight.w600),
+                    fontSize: 11,
+                    color: cor,
+                    fontWeight: FontWeight.w600,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -1022,7 +1133,10 @@ class _BalancoPagamentosScreenState extends State<BalancoPagamentosScreen> {
           Text(
             valor,
             style: TextStyle(
-                fontWeight: FontWeight.bold, fontSize: 15, color: cor),
+              fontWeight: FontWeight.bold,
+              fontSize: 15,
+              color: cor,
+            ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
@@ -1049,7 +1163,10 @@ class _BalancoPagamentosScreenState extends State<BalancoPagamentosScreen> {
             Text(
               _erro ?? 'Erro desconhecido',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                fontSize: 12,
+              ),
             ),
             const SizedBox(height: 24),
             FilledButton.icon(
@@ -1070,8 +1187,11 @@ class _BalancoPagamentosScreenState extends State<BalancoPagamentosScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.calendar_month_outlined,
-                size: 64, color: Colors.blue.shade200),
+            Icon(
+              Icons.calendar_month_outlined,
+              size: 64,
+              color: Colors.blue.shade200,
+            ),
             const SizedBox(height: 16),
             const Text(
               'Nenhuma competência mensal cadastrada',
@@ -1082,7 +1202,10 @@ class _BalancoPagamentosScreenState extends State<BalancoPagamentosScreen> {
             Text(
               'Cadastre o mês de referência na tela inicial para gerar o balanço de pagamentos.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                fontSize: 12,
+              ),
             ),
           ],
         ),
@@ -1091,7 +1214,6 @@ class _BalancoPagamentosScreenState extends State<BalancoPagamentosScreen> {
   }
 }
 
-
 /// Painel de detalhes de uma unidade no balanço de pagamentos.
 class _DetalheBalancoSheet extends StatefulWidget {
   final ItemBalanco item;
@@ -1099,7 +1221,7 @@ class _DetalheBalancoSheet extends StatefulWidget {
   final Future<void> Function(ItemBalanco item) onEditarDivida;
   final Future<void> Function(ItemBalanco item) onRegistrarAbatimento;
   final Future<void> Function(ItemBalanco item, AbatimentoDivida abatimento)
-      onRemoverAbatimento;
+  onRemoverAbatimento;
   final void Function(ItemBalanco item) onDetalharMeses;
 
   const _DetalheBalancoSheet({
@@ -1127,12 +1249,14 @@ class _DetalheBalancoSheetState extends State<_DetalheBalancoSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final escuro = theme.brightness == Brightness.dark;
     final temDivida = item.dividaRestante > 0.001;
     final corStatus = temDivida
-        ? const Color(0xFFC62828)
+        ? (escuro ? Colors.redAccent.shade100 : const Color(0xFFC62828))
         : item.pagoMesAtual
-            ? const Color(0xFF2E7D32)
-            : const Color(0xFF1565C0);
+        ? (escuro ? Colors.greenAccent.shade200 : const Color(0xFF2E7D32))
+        : theme.colorScheme.primary;
 
     return SafeArea(
       child: ConstrainedBox(
@@ -1167,7 +1291,11 @@ class _DetalheBalancoSheetState extends State<_DetalheBalancoSheet> {
                         Text(
                           item.unidade.nomeMorador,
                           style: TextStyle(
-                              fontSize: 12, color: Colors.grey.shade700),
+                            fontSize: 12,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurfaceVariant,
+                          ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -1178,8 +1306,8 @@ class _DetalheBalancoSheetState extends State<_DetalheBalancoSheet> {
                     temDivida
                         ? 'Devedor'
                         : item.pagoMesAtual
-                            ? 'Pago'
-                            : 'Pendente',
+                        ? 'Pago'
+                        : 'Pendente',
                     corStatus,
                   ),
                 ],
@@ -1187,7 +1315,10 @@ class _DetalheBalancoSheetState extends State<_DetalheBalancoSheet> {
               const SizedBox(height: 12),
               const Divider(height: 1),
 
-              _buildTituloSecao(Icons.event_available_outlined, 'Situação do mês'),
+              _buildTituloSecao(
+                Icons.event_available_outlined,
+                'Situação do mês',
+              ),
               Container(
                 padding: const EdgeInsets.fromLTRB(12, 8, 4, 8),
                 decoration: BoxDecoration(
@@ -1210,7 +1341,9 @@ class _DetalheBalancoSheetState extends State<_DetalheBalancoSheet> {
                                 ? 'Condomínio do mês quitado'
                                 : 'Condomínio do mês pendente',
                             style: const TextStyle(
-                                fontSize: 12, fontWeight: FontWeight.bold),
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                           const SizedBox(height: 2),
                           Text(
@@ -1219,8 +1352,10 @@ class _DetalheBalancoSheetState extends State<_DetalheBalancoSheet> {
                               fontSize: 13,
                               fontWeight: FontWeight.bold,
                               color: item.pagoMesAtual
-                                  ? Colors.green.shade800
-                                  : Colors.blue.shade800,
+                                  ? (escuro
+                                        ? Colors.greenAccent.shade200
+                                        : Colors.green.shade800)
+                                  : theme.colorScheme.primary,
                             ),
                           ),
                           if (item.pagoMesAtual && item.dataPagamento != null)
@@ -1228,7 +1363,11 @@ class _DetalheBalancoSheetState extends State<_DetalheBalancoSheet> {
                               'Pago em ${_dateFormat.format(item.dataPagamento!)}'
                               '${item.valorPago != null ? ' • ${CurrencyUtils.format(item.valorPago)}' : ''}',
                               style: TextStyle(
-                                  fontSize: 11, color: Colors.green.shade800),
+                                fontSize: 11,
+                                color: escuro
+                                    ? Colors.greenAccent.shade100
+                                    : Colors.green.shade800,
+                              ),
                             ),
                         ],
                       ),
@@ -1245,13 +1384,18 @@ class _DetalheBalancoSheetState extends State<_DetalheBalancoSheet> {
               ),
 
               _buildTituloSecao(
-                  Icons.account_balance_wallet_outlined, 'Dívida anterior'),
+                Icons.account_balance_wallet_outlined,
+                'Dívida anterior',
+              ),
               Row(
                 children: [
                   const Expanded(
                     child: Text(
                       'Dívida anterior (base)',
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                   _buildChip(
@@ -1276,12 +1420,17 @@ class _DetalheBalancoSheetState extends State<_DetalheBalancoSheet> {
                     item.dividaManual != null
                         ? 'Valor digitado'
                         : 'Calculado pelos meses em aberto',
-                    style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                   ),
                   Text(
                     CurrencyUtils.format(item.dividaBase),
                     style: const TextStyle(
-                        fontSize: 13, fontWeight: FontWeight.bold),
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ],
               ),
@@ -1289,7 +1438,9 @@ class _DetalheBalancoSheetState extends State<_DetalheBalancoSheet> {
               if (item.abatimentos.isNotEmpty) ...[
                 const SizedBox(height: 8),
                 _buildTituloSecao(
-                    Icons.payments_outlined, 'Abatimentos registrados'),
+                  Icons.payments_outlined,
+                  'Abatimentos registrados',
+                ),
                 ...item.abatimentos.map(
                   (a) => Padding(
                     padding: const EdgeInsets.symmetric(vertical: 2),
@@ -1307,12 +1458,17 @@ class _DetalheBalancoSheetState extends State<_DetalheBalancoSheet> {
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
-                            color: Colors.orange.shade900,
+                            color: escuro
+                                ? Colors.orangeAccent.shade100
+                                : Colors.orange.shade900,
                           ),
                         ),
                         IconButton(
-                          icon: Icon(Icons.delete_outline,
-                              size: 16, color: Colors.red.shade400),
+                          icon: Icon(
+                            Icons.delete_outline,
+                            size: 16,
+                            color: Colors.red.shade400,
+                          ),
                           visualDensity: VisualDensity.compact,
                           tooltip: 'Remover abatimento',
                           onPressed: () => _executar(
@@ -1326,15 +1482,21 @@ class _DetalheBalancoSheetState extends State<_DetalheBalancoSheet> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('TOTAL ABATIDO',
-                        style: TextStyle(
-                            fontSize: 12, fontWeight: FontWeight.bold)),
+                    const Text(
+                      'TOTAL ABATIDO',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     Text(
                       '- ${CurrencyUtils.format(item.totalAbatimentos)}',
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.bold,
-                        color: Colors.orange.shade900,
+                        color: escuro
+                            ? Colors.orangeAccent.shade100
+                            : Colors.orange.shade900,
                       ),
                     ),
                   ],
@@ -1353,14 +1515,19 @@ class _DetalheBalancoSheetState extends State<_DetalheBalancoSheet> {
               Container(
                 width: double.infinity,
                 margin: const EdgeInsets.only(top: 4),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
-                  color: (temDivida ? Colors.red : Colors.green)
-                      .withValues(alpha: 0.08),
+                  color: (temDivida ? Colors.red : Colors.green).withValues(
+                    alpha: 0.08,
+                  ),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: (temDivida ? Colors.red : Colors.green)
-                        .withValues(alpha: 0.3),
+                    color: (temDivida ? Colors.red : Colors.green).withValues(
+                      alpha: 0.3,
+                    ),
                   ),
                 ),
                 child: Row(
@@ -1374,14 +1541,20 @@ class _DetalheBalancoSheetState extends State<_DetalheBalancoSheet> {
                               : Icons.verified_outlined,
                           size: 16,
                           color: temDivida
-                              ? Colors.red.shade700
-                              : Colors.green.shade800,
+                              ? (escuro
+                                    ? Colors.redAccent.shade100
+                                    : Colors.red.shade700)
+                              : (escuro
+                                    ? Colors.greenAccent.shade200
+                                    : Colors.green.shade800),
                         ),
                         const SizedBox(width: 6),
                         const Text(
                           'RESTANTE DA DÍVIDA',
                           style: TextStyle(
-                              fontSize: 12, fontWeight: FontWeight.bold),
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ],
                     ),
@@ -1391,8 +1564,12 @@ class _DetalheBalancoSheetState extends State<_DetalheBalancoSheet> {
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
                         color: temDivida
-                            ? Colors.red.shade700
-                            : Colors.green.shade800,
+                            ? (escuro
+                                  ? Colors.redAccent.shade100
+                                  : Colors.red.shade700)
+                            : (escuro
+                                  ? Colors.greenAccent.shade200
+                                  : Colors.green.shade800),
                       ),
                     ),
                   ],
@@ -1405,7 +1582,8 @@ class _DetalheBalancoSheetState extends State<_DetalheBalancoSheet> {
                   child: TextButton.icon(
                     icon: const Icon(Icons.receipt_long, size: 16),
                     label: Text(
-                        'Detalhar meses calculados (${item.mesesAbertos.length})'),
+                      'Detalhar meses calculados (${item.mesesAbertos.length})',
+                    ),
                     onPressed: () => widget.onDetalharMeses(item),
                   ),
                 ),
@@ -1433,7 +1611,12 @@ class _DetalheBalancoSheetState extends State<_DetalheBalancoSheet> {
             ),
           ),
           const SizedBox(width: 8),
-          Expanded(child: Divider(color: Colors.blue.shade100)),
+          Expanded(
+            child: Divider(
+              color: Theme.of(context).colorScheme.primary
+                  .withValues(alpha: 0.25),
+            ),
+          ),
         ],
       ),
     );
@@ -1448,11 +1631,7 @@ class _DetalheBalancoSheetState extends State<_DetalheBalancoSheet> {
       ),
       child: Text(
         texto,
-        style: TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.bold,
-          color: cor,
-        ),
+        style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: cor),
       ),
     );
   }

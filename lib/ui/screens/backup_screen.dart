@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
 import '../../data/database/backup_service.dart';
 import '../widgets/app_shell.dart';
 
@@ -63,7 +64,9 @@ class _BackupScreenState extends State<BackupScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Conteúdo do backup copiado para a Área de Transferência.'),
+            content: Text(
+              'Conteúdo do backup copiado para a Área de Transferência.',
+            ),
             backgroundColor: Colors.green,
           ),
         );
@@ -89,7 +92,9 @@ class _BackupScreenState extends State<BackupScreen> {
     if (texto.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Cole o conteúdo JSON do backup no campo abaixo antes de restaurar.'),
+          content: Text(
+            'Cole o conteúdo JSON do backup no campo abaixo antes de restaurar.',
+          ),
           backgroundColor: Colors.orange,
         ),
       );
@@ -159,6 +164,7 @@ class _BackupScreenState extends State<BackupScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return PainelScaffold(
       titulo: 'Backup e Segurança',
       body: _processando
@@ -168,8 +174,10 @@ class _BackupScreenState extends State<BackupScreen> {
               children: [
                 // Alerta explicativo de armazenamento local
                 Card(
-                  color: Colors.blue.shade50,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  color: theme.colorScheme.primary.withValues(alpha: 0.08),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Column(
@@ -177,13 +185,16 @@ class _BackupScreenState extends State<BackupScreen> {
                       children: [
                         Row(
                           children: [
-                            Icon(Icons.info_outline, color: Colors.blue.shade900),
+                            Icon(
+                              Icons.info_outline,
+                              color: theme.colorScheme.primary,
+                            ),
                             const SizedBox(width: 8),
                             Text(
                               'Armazenamento Local e Seguro',
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
-                                color: Colors.blue.shade900,
+                                color: theme.colorScheme.primary,
                                 fontSize: 15,
                               ),
                             ),
@@ -193,10 +204,13 @@ class _BackupScreenState extends State<BackupScreen> {
                         Text(
                           kIsWeb
                               ? 'Todos os registros são gravados de forma persistente no armazenamento local deste navegador (IndexedDB).\n\n'
-                                  'Para não perder os dados, use sempre o mesmo navegador e dispositivo. Recomendamos exportar o backup mensalmente e guardá-lo no Google Drive, e-mail ou computador.'
+                                    'Para não perder os dados, use sempre o mesmo navegador e dispositivo. Recomendamos exportar o backup mensalmente e guardá-lo no Google Drive, e-mail ou computador.'
                               : 'Todos os registros são gravados de forma persistente na memória segura deste dispositivo.\n\n'
-                                  'Recomendamos realizar o backup mensalmente e salvá-lo no Google Drive, e-mail ou computador pessoal para prevenir perdas em caso de troca ou avaria do aparelho.',
-                          style: TextStyle(fontSize: 13, color: Colors.blue.shade900),
+                                    'Recomendamos realizar o backup mensalmente e salvá-lo no Google Drive, e-mail ou computador pessoal para prevenir perdas em caso de troca ou avaria do aparelho.',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: theme.colorScheme.primary,
+                          ),
                         ),
                       ],
                     ),
@@ -208,7 +222,9 @@ class _BackupScreenState extends State<BackupScreen> {
                 // Card de Exportação de Backup
                 Card(
                   elevation: 2,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Column(
@@ -216,20 +232,32 @@ class _BackupScreenState extends State<BackupScreen> {
                       children: [
                         const Text(
                           'Exportar Backup do Condomínio',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
                         ),
                         const SizedBox(height: 6),
                         Text(
                           'Gera um arquivo JSON completo com validação de integridade criptográfica SHA-256 contendo todo o cadastro das 11 unidades e as competências cadastradas.',
-                          style: TextStyle(color: Colors.grey.shade700, fontSize: 13),
+                          style: TextStyle(
+                            color: theme.colorScheme.onSurfaceVariant,
+                            fontSize: 13,
+                          ),
                         ),
                         const SizedBox(height: 16),
                         Row(
                           children: [
                             Expanded(
                               child: FilledButton.icon(
-                                icon: Icon(kIsWeb ? Icons.download : Icons.share),
-                                label: Text(kIsWeb ? 'Baixar Arquivo' : 'Compartilhar Arquivo'),
+                                icon: Icon(
+                                  kIsWeb ? Icons.download : Icons.share,
+                                ),
+                                label: Text(
+                                  kIsWeb
+                                      ? 'Baixar Arquivo'
+                                      : 'Compartilhar Arquivo',
+                                ),
                                 onPressed: _exportarBackup,
                               ),
                             ),
@@ -251,7 +279,9 @@ class _BackupScreenState extends State<BackupScreen> {
                 // Card de Restauração de Backup
                 Card(
                   elevation: 2,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Column(
@@ -259,12 +289,18 @@ class _BackupScreenState extends State<BackupScreen> {
                       children: [
                         const Text(
                           'Restaurar Backup Existente',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
                         ),
                         const SizedBox(height: 6),
                         Text(
                           'Cole abaixo o texto JSON exportado anteriormente para recuperar unidades e competências com verificação automática de integridade.',
-                          style: TextStyle(color: Colors.grey.shade700, fontSize: 13),
+                          style: TextStyle(
+                            color: theme.colorScheme.onSurfaceVariant,
+                            fontSize: 13,
+                          ),
                         ),
                         const SizedBox(height: 12),
                         TextField(
@@ -272,9 +308,11 @@ class _BackupScreenState extends State<BackupScreen> {
                           maxLines: 5,
                           decoration: InputDecoration(
                             hintText: 'Cole aqui o texto do backup JSON...',
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
                             filled: true,
-                            fillColor: Colors.white,
+                            fillColor: theme.colorScheme.surface,
                           ),
                         ),
                         const SizedBox(height: 12),

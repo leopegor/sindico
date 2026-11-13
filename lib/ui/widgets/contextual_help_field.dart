@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
 import '../../core/field_help_definitions.dart';
 
 /// Campo de entrada com botão integrado de Ajuda Contextual completa e validação detalhada.
@@ -40,7 +41,7 @@ class ContextualHelpField extends StatelessWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -60,7 +61,7 @@ class ContextualHelpField extends StatelessWidget {
                       height: 4,
                       margin: const EdgeInsets.only(bottom: 16),
                       decoration: BoxDecoration(
-                        color: Colors.grey.shade300,
+                        color: theme.colorScheme.outlineVariant,
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
@@ -70,7 +71,9 @@ class ContextualHelpField extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                          color: theme.colorScheme.primary.withValues(
+                            alpha: 0.1,
+                          ),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
@@ -175,14 +178,16 @@ class ContextualHelpField extends StatelessWidget {
                   title,
                   style: theme.textTheme.labelMedium?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: Colors.grey.shade800,
+                    color: theme.colorScheme.onSurfaceVariant,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   content,
                   style: theme.textTheme.bodyMedium?.copyWith(
-                    color: highlight ? theme.colorScheme.primary : Colors.black87,
+                    color: highlight
+                        ? theme.colorScheme.primary
+                        : theme.colorScheme.onSurface,
                     fontWeight: highlight ? FontWeight.w500 : FontWeight.normal,
                   ),
                 ),
@@ -196,6 +201,7 @@ class ContextualHelpField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -204,10 +210,10 @@ class ContextualHelpField extends StatelessWidget {
             Expanded(
               child: Text(
                 helpInfo.nome,
-                style: const TextStyle(
+                style: theme.textTheme.bodyMedium?.copyWith(
                   fontWeight: FontWeight.w600,
                   fontSize: 14,
-                  color: Colors.black87,
+                  color: theme.colorScheme.onSurface,
                 ),
               ),
             ),
@@ -236,11 +242,11 @@ class ContextualHelpField extends StatelessWidget {
             suffixText: suffixText,
             helperText: helpInfo.instrucao,
             helperMaxLines: 2,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
             filled: true,
-            fillColor: readOnly ? Colors.grey.shade100 : Colors.white,
+            fillColor: readOnly
+                ? theme.colorScheme.surfaceContainerHighest
+                : theme.colorScheme.surface,
           ),
         ),
         const SizedBox(height: 12),
