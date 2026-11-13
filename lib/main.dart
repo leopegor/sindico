@@ -3,8 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'data/database/app_database.dart';
 import 'data/supabase/supabase_servico.dart';
-import 'ui/widgets/app_shell.dart';
-import 'ui/widgets/navegacao.dart';
+import 'ui/widgets/auth_gate.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -148,7 +147,7 @@ class SindicoApp extends StatelessWidget {
           contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         ),
       ),
-      home: const AppLayout(secaoInicial: DestinoApp.competencias),
+      home: const AuthGate(),
     );
   }
 }

@@ -287,20 +287,6 @@ class _HomeScreenState extends State<HomeScreen> {
           : _erro != null
               ? _buildErro()
               : _buildConteudo(),
-      floatingActionButton: FloatingActionButton.extended(
-        icon: const Icon(Icons.add),
-        label: const Text('Novo Mês'),
-        onPressed: () async {
-          final atualizado = await Navigator.of(context).push<bool>(
-            MaterialPageRoute(
-              builder: (_) => const CompetenciaFormScreen(),
-            ),
-          );
-          if (atualizado == true) {
-            _carregarCompetencias();
-          }
-        },
-      ),
     );
   }
 

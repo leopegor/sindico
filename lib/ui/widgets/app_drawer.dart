@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'auth_gate.dart';
 import 'navegacao.dart';
 
 /// Drawer de navegação principal da aplicação (telas estreitas/mobile).
@@ -44,6 +45,16 @@ class AppDrawer extends StatelessWidget {
             ),
           const Divider(),
           const Spacer(),
+          if (AuthScope.maybeOf(context) != null)
+            ListTile(
+              leading: const Icon(Icons.logout),
+              title: const Text('Sair'),
+              onTap: () {
+                final auth = AuthScope.maybeOf(context);
+                Navigator.of(context).pop();
+                auth?.sair();
+              },
+            ),
           Padding(
             padding: const EdgeInsets.all(16),
             child: Text(

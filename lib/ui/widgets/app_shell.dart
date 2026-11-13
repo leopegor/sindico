@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/supabase_config.dart';
 import '../../data/backend.dart';
 import 'app_drawer.dart';
+import 'auth_gate.dart';
 import 'navegacao.dart';
 
 /// Layout principal da aplicação.
@@ -232,6 +233,16 @@ class _NavegacaoLateral extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: 4),
           ),
       ],
+      trailing: AuthScope.maybeOf(context) == null
+          ? null
+          : Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: IconButton(
+                tooltip: 'Sair',
+                icon: const Icon(Icons.logout),
+                onPressed: () => AuthScope.maybeOf(context)?.sair(),
+              ),
+            ),
     );
   }
 }
